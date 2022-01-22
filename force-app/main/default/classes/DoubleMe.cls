@@ -1,15 +1,34 @@
 public with sharing class DoubleMe {
 
+    private static Id originalSessionId;
+    private static String originalSessionName;
+    private static String originalSessionCode;
+    private static Id targetSessionId;
+    private static String targetSessionName;
+    private static String targetSessionCode;
+
     private static Integer daysToAdd;
-    private static Id sessionId;
+    private static Date fixedStartDate;
+    private static Date fixedEndDate;
+    private static Boolean fixedDateMode = false;
+    private static Boolean updateSessionNameMode = false;
 
     @InvocableMethod(label='Double Me' description='Provide a collection of Course Session Options to clone')
     public static List<Result> doubleThisCollection(List<Request> lstRequests) {
         List<Result> lstResults = new List<Result>();
 
         List<TREX1__Course_Session_Option__c> lstCSOs = lstRequests.get(0).lstCSOs;
-        sessionId = lstRequests.get(0).sessionId;
+        originalSessionId = lstRequests.get(0).originalSessionId;
+        targetSessionId = lstRequests.get(0).targetSessionId;
+        fixedDateMode = lstRequests.get(0).fixedDateMode != null ? lstRequests.get(0).fixedDateMode : false;
         daysToAdd = lstRequests.get(0).daysToAdd != null ? lstRequests.get(0).daysToAdd : 0;
+        fixedStartDate = lstRequests.get(0).fixedStartDate != null ? lstRequests.get(0).fixedStartDate : Date.today();
+        fixedEndDate = lstRequests.get(0).fixedEndDate != null ? lstRequests.get(0).fixedEndDate : Date.today();
+        updateSessionNameMode = lstRequests.get(0).updateSessionNameMode != null ? lstRequests.get(0).updateSessionNameMode : false;
+
+        if (updateSessionNameMode) {
+            setSessionNames();
+        }
 
         Set<Id> setCourseOptionIds = new Set<Id>();
         Set<Id> setCourseSessionIds = new Set<Id>();
@@ -63,8 +82,15 @@ public with sharing class DoubleMe {
         Map<Id, TREX1__Course_Session__c> mapOldCourseSessionIdToClone = new Map<Id, TREX1__Course_Session__c>();
         for (TREX1__Course_Session__c cs : mapCourseSessions.values()) {
             TREX1__Course_Session__c clonedCourseSession = cs.clone(false, false, false, false);
-            updateCourseSessionDates(clonedCourseSession, daysToAdd);
-            clonedCourseSession.TREX1__Session__c = sessionId;
+            if (fixedDateMode) {
+                updateCourseSessionDatesInFixedMode(clonedCourseSession, fixedStartDate, fixedEndDate);
+            } else {
+                updateCourseSessionDates(clonedCourseSession, daysToAdd);
+            }
+            if (updateSessionNameMode) {
+                updateCourseSessionName(clonedCourseSession);
+            }
+            clonedCourseSession.TREX1__Session__c = targetSessionId;
             mapOldCourseSessionIdToClone.put(cs.Id, clonedCourseSession);
         }
         return mapOldCourseSessionIdToClone;
@@ -76,18 +102,58 @@ public with sharing class DoubleMe {
         Map<Id, TREX1__Course_Option__c> mapOldCourseOptionIdToClone = new Map<Id, TREX1__Course_Option__c>();
         for (TREX1__Course_Option__c co : mapCourseOptions.values()) {
             TREX1__Course_Option__c clonedCourseOption = co.clone(false, false, false, false);
-            updateCourseOptionDates(clonedCourseOption, daysToAdd);
+            if (fixedDateMode) {
+                updateCourseOptionDatesInFixedMode(clonedCourseOption, fixedStartDate, fixedEndDate);
+            } else {
+                updateCourseOptionDates(clonedCourseOption, daysToAdd);
+            }
+            if (updateSessionNameMode) {
+                updateCourseOptionName(clonedCourseOption);
+            }
             mapOldCourseOptionIdToClone.put(co.Id, clonedCourseOption);
         }
         return mapOldCourseOptionIdToClone;
     }
 
-    private static void updateCourseSessionDates(TREX1__Course_Session__c cs, Integer daysToAdd) {
+    private static void updateCourseSessionName(
+        TREX1__Course_Session__c cs
+    ) {
+        if (cs.Name.contains(originalSessionName)) {
+            cs.Name = cs.Name.replace(originalSessionName, targetSessionName);
+        }
+        if (cs.Name.contains(originalSessionCode)) {
+            cs.Name = cs.Name.replace(originalSessionCode, targetSessionCode);
+        }
+    }
+
+    private static void updateCourseOptionName(
+        TREX1__Course_Option__c co
+    ) {
+        if (co.Name.contains(originalSessionName)) {
+            co.Name = co.Name.replace(originalSessionName, targetSessionName);
+        }
+        if (co.Name.contains(originalSessionCode)) {
+            co.Name = co.Name.replace(originalSessionCode, targetSessionCode);
+        }
+    }
+
+
+    /**
+     * Add days date updates
+     */
+
+    private static void updateCourseSessionDates(
+        TREX1__Course_Session__c cs, 
+        Integer daysToAdd
+    ) {
         cs.TREX1__Available_Online_From__c = cs.TREX1__Available_Online_From__c != null ? cs.TREX1__Available_Online_From__c + daysToAdd : null;
         cs.TREX1__Available_Online_To__c = cs.TREX1__Available_Online_To__c != null ? cs.TREX1__Available_Online_To__c + daysToAdd : null;
     } 
 
-    private static void updateCourseOptionDates(TREX1__Course_Option__c co, Integer daysToAdd) {
+    private static void updateCourseOptionDates(
+        TREX1__Course_Option__c co, 
+        Integer daysToAdd
+    ) {
         co.TREX1__Start_Date__c = co.TREX1__Start_Date__c != null ? co.TREX1__Start_Date__c + daysToAdd : null;
         co.TREX1__End_Date__c = co.TREX1__End_Date__c != null ? co.TREX1__End_Date__c + daysToAdd : null;
         co.TREX1__Register_From_Date__c = co.TREX1__Register_From_Date__c != null ? co.TREX1__Register_From_Date__c + daysToAdd : null;
@@ -100,7 +166,40 @@ public with sharing class DoubleMe {
         co.TREX1__Early_Register_Online_To_Date__c = co.TREX1__Early_Register_Online_To_Date__c != null ? co.TREX1__Early_Register_Online_To_Date__c + daysToAdd : null;
     } 
 
-    private static Map<Id, TREX1__Course_Session__c> getCourseSessionMap(Set<Id> setCourseSessionIds) {
+    /**
+     * Fixed mode date updates
+     */
+
+    private static void updateCourseSessionDatesInFixedMode(
+        TREX1__Course_Session__c cs, 
+        Date startDate, 
+        Date endDate
+    ) {
+        cs.TREX1__Available_Online_From__c = startDate;
+        cs.TREX1__Available_Online_To__c = endDate;
+    } 
+
+    private static void updateCourseOptionDatesInFixedMode(
+        TREX1__Course_Option__c co, 
+        Date startDate, 
+        Date endDate
+    ) {
+        co.TREX1__Start_Date__c = startDate;
+        co.TREX1__End_Date__c = endDate;
+        co.TREX1__Register_From_Date__c = startDate;
+        co.TREX1__Register_To_Date__c = endDate;
+        co.TREX1__Register_Online_From_Date__c = startDate;
+        co.TREX1__Register_Online_To_Date__c = endDate;
+        co.TREX1__Early_Register_From_Date__c = startDate;
+        co.TREX1__Early_Register_To_Date__c = endDate;
+        co.TREX1__Early_Register_Online_From_Date__c = startDate;
+        co.TREX1__Early_Register_Online_To_Date__c = endDate;
+    } 
+
+
+    private static Map<Id, TREX1__Course_Session__c> getCourseSessionMap(
+        Set<Id> setCourseSessionIds
+    ) {
         return new Map<Id, TREX1__Course_Session__c>([
             SELECT Id, Name, Location__c, TREX1__Available__c, TREX1__Available_Online__c, TREX1__Available_Online_From__c, 
                    TREX1__Available_Online_To__c, TREX1__Code__c, TREX1__Course__c, TREX1__Description__c, TREX1__Expiry_Extension_Seconds__c,
@@ -112,10 +211,14 @@ public with sharing class DoubleMe {
                    TREX1__Waitlist_Message__c, TREX1__Withdrawal_Days__c, TREX1__Withdrawal_Fee__c, TREX1__Withdrawal_GL_Account__c, TREX1__Withdrawal_Policy__c
               FROM TREX1__Course_Session__c 
              WHERE Id IN :setCourseSessionIds
+              WITH SECURITY_ENFORCED
+             LIMIT 10000
         ]);
     }
 
-    private static Map<Id, TREX1__Course_Option__c> getCourseOptionMap(Set<Id> setCourseOptionIds) {
+    private static Map<Id, TREX1__Course_Option__c> getCourseOptionMap(
+        Set<Id> setCourseOptionIds
+    ) {
         return new Map<Id, TREX1__Course_Option__c>([
             SELECT Id, Name, Day_of_Week_Code__c, TREX1__Age_as_of_date__c, TREX1__Age_Max__c, TREX1__Age_Min__c, 
                    TREX1__Attendance_Group__c, TREX1__Available__c, TREX1__Available_Online__c, TREX1__Capacity__c, 
@@ -141,16 +244,42 @@ public with sharing class DoubleMe {
                    TREX1__Waitlist_Pending_Confirmation_Total__c, TREX1__Waitlist_Total__c
               FROM TREX1__Course_Option__c 
              WHERE Id IN :setCourseOptionIds
+              WITH SECURITY_ENFORCED
+             LIMIT 10000
         ]);
     }
+
+    private static void setSessionNames() {
+        List<TREX1__Session__c> lstSessions = [SELECT Id, Name, Session_Code__c FROM TREX1__Session__c WHERE Id = :originalSessionId OR Id = :targetSessionId WITH SECURITY_ENFORCED LIMIT 2];
+        for (TREX1__Session__c session : lstSessions) {
+            if (session.Id == originalSessionId) {
+                originalSessionName = session.Name;
+                originalSessionCode = session.Session_Code__c != null ? session.Session_Code__c : null;
+            } else if (session.Id == targetSessionId) {
+                targetSessionName = session.Name;
+                targetSessionCode = session.Session_Code__c != null ? session.Session_Code__c : null;
+            }
+        }
+    }
+
 
     public class Request {
         @InvocableVariable(required=true description='Original Course Session Options')
         public List<TREX1__Course_Session_Option__c> lstCSOs;
+        @InvocableVariable(required=true description='Original Session')
+        public Id originalSessionId;
         @InvocableVariable(required=true description='Target Session')
-        public Id sessionId;
+        public Id targetSessionId;
+        @InvocableVariable(description='Fixed Date Mode')
+        public Boolean fixedDateMode;
         @InvocableVariable(description='Days to Add')
         public Integer daysToAdd;
+        @InvocableVariable(description='Fixed Start Date')
+        public Date fixedStartDate;
+        @InvocableVariable(description='Fixed End Date')
+        public Date fixedEndDate;
+        @InvocableVariable(description='Update Session Names in Record Names')
+        public Boolean updateSessionNameMode;
     }
 
     public class Result {
