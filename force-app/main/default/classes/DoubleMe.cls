@@ -1,5 +1,10 @@
 public with sharing class DoubleMe {
 
+    /**
+     * Static variables
+     */
+
+    // Coming and going session information
     private static Id originalSessionId;
     private static String originalSessionName;
     private static String originalSessionCode;
@@ -7,6 +12,7 @@ public with sharing class DoubleMe {
     private static String targetSessionName;
     private static String targetSessionCode;
 
+    // Configuration options from flow input
     private static Integer daysToAdd;
     private static Date fixedStartDate;
     private static Date fixedEndDate;
@@ -27,7 +33,7 @@ public with sharing class DoubleMe {
         updateSessionNameMode = lstRequests.get(0).updateSessionNameMode != null ? lstRequests.get(0).updateSessionNameMode : false;
 
         if (updateSessionNameMode) {
-            setSessionNames();
+            setSessionDetails();
         }
 
         Set<Id> setCourseOptionIds = new Set<Id>();
@@ -42,11 +48,11 @@ public with sharing class DoubleMe {
         Map<Id, TREX1__Course_Session__c> mapCourseSessions = getCourseSessionMap(setCourseSessionIds);
         Map<Id, TREX1__Course_Option__c> mapCourseOptions = getCourseOptionMap(setCourseOptionIds);
         // Create maps of cloned records and insert them
-        Map<Id, TREX1__Course_Session__c> mapOldCourseSessionIdToClone = getClonedCourseSessionMap(mapCourseSessions);
+        Map<Id, TREX1__Course_Session__c> mapOldCourseSessionIdToClone = cloneCourseSessions(mapCourseSessions);
         if (!mapOldCourseSessionIdToClone.isEmpty()) {
             insert mapOldCourseSessionIdToClone.values();
         }
-        Map<Id, TREX1__Course_Option__c> mapOldCourseOptionIdToClone = getClonedCourseOptionMap(mapCourseOptions);
+        Map<Id, TREX1__Course_Option__c> mapOldCourseOptionIdToClone = cloneCourseOptions(mapCourseOptions);
         if (!mapOldCourseOptionIdToClone.isEmpty()) {
             insert mapOldCourseOptionIdToClone.values();
         }
@@ -76,7 +82,11 @@ public with sharing class DoubleMe {
 
     }
 
-    private static Map<Id, TREX1__Course_Session__c> getClonedCourseSessionMap(
+    /**
+     * Clone records and modify clones to configuration input
+     */
+
+    private static Map<Id, TREX1__Course_Session__c> cloneCourseSessions(
         Map<Id, TREX1__Course_Session__c> mapCourseSessions
     ) {
         Map<Id, TREX1__Course_Session__c> mapOldCourseSessionIdToClone = new Map<Id, TREX1__Course_Session__c>();
@@ -96,7 +106,7 @@ public with sharing class DoubleMe {
         return mapOldCourseSessionIdToClone;
     }
 
-    private static Map<Id, TREX1__Course_Option__c> getClonedCourseOptionMap(
+    private static Map<Id, TREX1__Course_Option__c> cloneCourseOptions(
         Map<Id, TREX1__Course_Option__c> mapCourseOptions
     ) {
         Map<Id, TREX1__Course_Option__c> mapOldCourseOptionIdToClone = new Map<Id, TREX1__Course_Option__c>();
@@ -114,6 +124,11 @@ public with sharing class DoubleMe {
         }
         return mapOldCourseOptionIdToClone;
     }
+
+    /**
+     * Helpers replace instances of Session Name or Session Code in record names
+     * e.g. Baseball Spring 2022 Tournament => Baseball Summer 2022 Tournament
+     */
 
     private static void updateCourseSessionName(
         TREX1__Course_Session__c cs
@@ -137,11 +152,12 @@ public with sharing class DoubleMe {
         }
     }
 
-
     /**
-     * Add days date updates
+     * Date update helpers
      */
 
+    // Add days to all dates
+    
     private static void updateCourseSessionDates(
         TREX1__Course_Session__c cs, 
         Integer daysToAdd
@@ -166,9 +182,7 @@ public with sharing class DoubleMe {
         co.TREX1__Early_Register_Online_To_Date__c = co.TREX1__Early_Register_Online_To_Date__c != null ? co.TREX1__Early_Register_Online_To_Date__c + daysToAdd : null;
     } 
 
-    /**
-     * Fixed mode date updates
-     */
+    // Update dates to configuration start and end dates
 
     private static void updateCourseSessionDatesInFixedMode(
         TREX1__Course_Session__c cs, 
@@ -196,6 +210,24 @@ public with sharing class DoubleMe {
         co.TREX1__Early_Register_Online_To_Date__c = endDate;
     } 
 
+    /**
+     * Set name and session code for original and target sessions
+     */
+
+    private static void setSessionDetails() {
+        Map<Id, TREX1__Session__c> mapSessions = getSessionMap();
+        TREX1__Session__c originalSession = mapSessions.get(originalSessionId);
+        TREX1__Session__c targetSession = mapSessions.get(targetSessionId);
+        originalSessionName = originalSession.Name;
+        originalSessionCode = originalSession.Session_Code__c != null ? originalSession.Session_Code__c : null;
+        targetSessionName = targetSession.Name;
+        targetSessionCode = targetSession.Session_Code__c != null ? targetSession.Session_Code__c : null;
+    }
+
+
+    /**
+     * Queries
+     */
 
     private static Map<Id, TREX1__Course_Session__c> getCourseSessionMap(
         Set<Id> setCourseSessionIds
@@ -249,19 +281,15 @@ public with sharing class DoubleMe {
         ]);
     }
 
-    private static void setSessionNames() {
-        List<TREX1__Session__c> lstSessions = [SELECT Id, Name, Session_Code__c FROM TREX1__Session__c WHERE Id = :originalSessionId OR Id = :targetSessionId WITH SECURITY_ENFORCED LIMIT 2];
-        for (TREX1__Session__c session : lstSessions) {
-            if (session.Id == originalSessionId) {
-                originalSessionName = session.Name;
-                originalSessionCode = session.Session_Code__c != null ? session.Session_Code__c : null;
-            } else if (session.Id == targetSessionId) {
-                targetSessionName = session.Name;
-                targetSessionCode = session.Session_Code__c != null ? session.Session_Code__c : null;
-            }
-        }
+    private static Map<Id, TREX1__Session__c> getSessionMap() {
+        return new Map<Id, TREX1__Session__c>([
+            SELECT Id, Name, Session_Code__c FROM TREX1__Session__c WHERE Id = :originalSessionId OR Id = :targetSessionId WITH SECURITY_ENFORCED LIMIT 2 
+        ]);
     }
 
+    /**
+     * Wrappers
+     */
 
     public class Request {
         @InvocableVariable(required=true description='Original Course Session Options')
