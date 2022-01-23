@@ -19,6 +19,10 @@ public with sharing class DoubleMe {
     private static Boolean fixedDateMode = false;
     private static Boolean updateSessionNameMode = false;
 
+    /**
+     * Invocable Method
+     */
+
     @InvocableMethod(label='Double Me' description='Provide a collection of Course Session Options to clone')
     public static List<Result> doubleThisCollection(List<Request> lstRequests) {
         List<Result> lstResults = new List<Result>();
@@ -180,6 +184,7 @@ public with sharing class DoubleMe {
         co.TREX1__Early_Register_To_Date__c = co.TREX1__Early_Register_To_Date__c != null ? co.TREX1__Early_Register_To_Date__c + daysToAdd : null;
         co.TREX1__Early_Register_Online_From_Date__c = co.TREX1__Early_Register_Online_From_Date__c != null ? co.TREX1__Early_Register_Online_From_Date__c + daysToAdd : null;
         co.TREX1__Early_Register_Online_To_Date__c = co.TREX1__Early_Register_Online_To_Date__c != null ? co.TREX1__Early_Register_Online_To_Date__c + daysToAdd : null;
+        co.TREX1__Age_as_of_date__c = co.TREX1__Age_as_of_date__c != null ? co.TREX1__Age_as_of_date__c + daysToAdd : null;
     } 
 
     // Update dates to configuration start and end dates
@@ -208,6 +213,7 @@ public with sharing class DoubleMe {
         co.TREX1__Early_Register_To_Date__c = endDate;
         co.TREX1__Early_Register_Online_From_Date__c = startDate;
         co.TREX1__Early_Register_Online_To_Date__c = endDate;
+        co.TREX1__Age_as_of_date__c = co.TREX1__Age_as_of_date__c != null ? startDate : null;
     } 
 
     /**
@@ -233,7 +239,7 @@ public with sharing class DoubleMe {
         Set<Id> setCourseSessionIds
     ) {
         return new Map<Id, TREX1__Course_Session__c>([
-            SELECT Id, Name, Location__c, TREX1__Available__c, TREX1__Available_Online__c, TREX1__Available_Online_From__c, 
+            SELECT Id, Name, TREX1__Available__c, TREX1__Available_Online__c, TREX1__Available_Online_From__c, 
                    TREX1__Available_Online_To__c, TREX1__Code__c, TREX1__Course__c, TREX1__Description__c, TREX1__Expiry_Extension_Seconds__c,
                    TREX1__External_Alert__c, TREX1__Free_Membership_End_Date__c, TREX1__Free_Membership_Start_Date__c, TREX1__Free_Membership_Type__c, 
                    TREX1__Initial_Seconds_To_Expiry__c, TREX1__Internal_Alert__c, TREX1__Max_Expiry_Seconds__c, TREX1__Num_Classroom_Assignments__c,
