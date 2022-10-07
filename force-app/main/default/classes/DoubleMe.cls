@@ -1,3 +1,11 @@
+/*
+ * DoubleMe: Handler for Cloning the details.
+ * 
+ * 
+ * 
+ * Created By: 			Revision Date	
+ * Sagarika Rout 		27th Sep		Updated: Added Null Check and try Catch
+ */ 
 public with sharing class DoubleMe {
 
     /**
@@ -18,6 +26,9 @@ public with sharing class DoubleMe {
     private static Date fixedEndDate;
     private static Boolean fixedDateMode = false;
     private static Boolean updateSessionNameMode = false;
+    
+    private static string exceptionString = 'The following exception has occurred: ';
+    private static String contactAdminError = ' kindly Contact to Admin';
 
     /**
      * Invocable Method
@@ -25,64 +36,97 @@ public with sharing class DoubleMe {
 
     @InvocableMethod(label='Double Me' description='Provide a collection of Course Session Options to clone')
     public static List<Result> doubleThisCollection(List<Request> lstRequests) {
-        List<Result> lstResults = new List<Result>();
+        try {
+            List<Result> lstResults = new List<Result>();
+            List<TREX1__Course_Session_Option__c> lstCSOs;
+    
+            if(lstRequests.size() > 0){
+                lstCSOs = lstRequests.get(0).lstCSOs;
+                originalSessionId = lstRequests.get(0).originalSessionId;
+                targetSessionId = lstRequests.get(0).targetSessionId;
+                fixedDateMode = lstRequests.get(0).fixedDateMode != null ? lstRequests.get(0).fixedDateMode : false;
+                daysToAdd = lstRequests.get(0).daysToAdd != null ? lstRequests.get(0).daysToAdd : 0;
+                fixedStartDate = lstRequests.get(0).fixedStartDate != null ? lstRequests.get(0).fixedStartDate : Date.today();
+                fixedEndDate = lstRequests.get(0).fixedEndDate != null ? lstRequests.get(0).fixedEndDate : Date.today();
+                updateSessionNameMode = lstRequests.get(0).updateSessionNameMode != null ? lstRequests.get(0).updateSessionNameMode : false;
+            }
+            else{
+                return null;
+            }
+            if (updateSessionNameMode) {
+                setSessionDetails();
+            }
+            
+            Set<Id> setCourseOptionIds = new Set<Id>();
+            Set<Id> setCourseSessionIds = new Set<Id>();
+            // Create sets of ids for queries
+            for (TREX1__Course_Session_Option__c cso : lstCSOs) {
+                if(cso.TREX1__Course_Option__c != null){
+                    setCourseOptionIds.add(cso.TREX1__Course_Option__c);
+                }
+                if(cso.TREX1__Course_Session__c != null){
+                	setCourseSessionIds.add(cso.TREX1__Course_Session__c);
+                }
+            }
+            
+            // Get map of records with only fields to clone
+            Map<Id, TREX1__Course_Session__c> mapCourseSessions = getCourseSessionMap(setCourseSessionIds);
+            Map<Id, TREX1__Course_Option__c> mapCourseOptions = getCourseOptionMap(setCourseOptionIds);
+            // Create maps of cloned records and insert them
+            Map<Id, TREX1__Course_Session__c> mapOldCourseSessionIdToClone = cloneCourseSessions(mapCourseSessions);
+            
+            
+            if (!mapOldCourseSessionIdToClone.isEmpty()) {
+                insert mapOldCourseSessionIdToClone.values();
+                
+            }
+            Map<Id, TREX1__Course_Option__c> mapOldCourseOptionIdToClone = cloneCourseOptions(mapCourseOptions);
+            if (!mapOldCourseOptionIdToClone.isEmpty()) {
+                insert mapOldCourseOptionIdToClone.values();
+            }
+            
+            // Create CSOs for each in request, pointing to cloned parent records
+            List<TREX1__Course_Session_Option__c> lstClonedCSOs = new List<TREX1__Course_Session_Option__c>();
+            for (TREX1__Course_Session_Option__c cso : lstCSOs) {
+                lstClonedCSOs.add(
+                    new TREX1__Course_Session_Option__c(
+                        TREX1__Course_Session__c   = mapOldCourseSessionIdToClone.get(cso.TREX1__Course_Session__c).Id,
+                        TREX1__Course_Option__c    = mapOldCourseOptionIdToClone.get(cso.TREX1__Course_Option__c).Id,
+                        TREX1__Option_Available__c = cso.TREX1__Option_Available__c,
+                        TREX1__Available_Online__c = cso.TREX1__Available_Online__c
+                    )
+                );
+            }
+            if (!lstClonedCSOs.isEmpty()) {
+                insert lstClonedCSOs;
+            }
+            
+            Result result = new Result();
+            result.lstClonedCSOs = lstClonedCSOs;
+            result.lstClonedCourseSessions = mapOldCourseSessionIdToClone.values();
+            result.lstClonedCourseOptions = mapOldCourseOptionIdToClone.values();
+            lstResults.add(result);
+            return lstResults;
+            
+            
 
-        List<TREX1__Course_Session_Option__c> lstCSOs = lstRequests.get(0).lstCSOs;
-        originalSessionId = lstRequests.get(0).originalSessionId;
-        targetSessionId = lstRequests.get(0).targetSessionId;
-        fixedDateMode = lstRequests.get(0).fixedDateMode != null ? lstRequests.get(0).fixedDateMode : false;
-        daysToAdd = lstRequests.get(0).daysToAdd != null ? lstRequests.get(0).daysToAdd : 0;
-        fixedStartDate = lstRequests.get(0).fixedStartDate != null ? lstRequests.get(0).fixedStartDate : Date.today();
-        fixedEndDate = lstRequests.get(0).fixedEndDate != null ? lstRequests.get(0).fixedEndDate : Date.today();
-        updateSessionNameMode = lstRequests.get(0).updateSessionNameMode != null ? lstRequests.get(0).updateSessionNameMode : false;
+        }catch (QueryException e) {
+            System.debug('Query Exception hit' + e.getStackTraceString());
+            throw new AuraHandledException( exceptionString +  e.getStackTraceString() + contactAdminError);
 
-        if (updateSessionNameMode) {
-            setSessionDetails();
-        }
 
-        Set<Id> setCourseOptionIds = new Set<Id>();
-        Set<Id> setCourseSessionIds = new Set<Id>();
-        // Create sets of ids for queries
-        for (TREX1__Course_Session_Option__c cso : lstCSOs) {
-            setCourseOptionIds.add(cso.TREX1__Course_Option__c);
-            setCourseSessionIds.add(cso.TREX1__Course_Session__c);
-        }
+        }catch(DmlException e){
+                //If a DML exception occurs it will go to this statement
+                System.debug('DmlException hit' + e.getStackTraceString());
+            	throw new AuraHandledException( exceptionString +  e.getStackTraceString() + contactAdminError);
 
-        // Get map of records with only fields to clone
-        Map<Id, TREX1__Course_Session__c> mapCourseSessions = getCourseSessionMap(setCourseSessionIds);
-        Map<Id, TREX1__Course_Option__c> mapCourseOptions = getCourseOptionMap(setCourseOptionIds);
-        // Create maps of cloned records and insert them
-        Map<Id, TREX1__Course_Session__c> mapOldCourseSessionIdToClone = cloneCourseSessions(mapCourseSessions);
-        if (!mapOldCourseSessionIdToClone.isEmpty()) {
-            insert mapOldCourseSessionIdToClone.values();
+        }catch (Exception e) {
+                //Any other exceptions that occur will go here
+                System.debug('Exception hit' + e.getStackTraceString());
+                throw new AuraHandledException( exceptionString +  e.getStackTraceString() + contactAdminError);    
+        } finally {
+                // for future use
         }
-        Map<Id, TREX1__Course_Option__c> mapOldCourseOptionIdToClone = cloneCourseOptions(mapCourseOptions);
-        if (!mapOldCourseOptionIdToClone.isEmpty()) {
-            insert mapOldCourseOptionIdToClone.values();
-        }
-
-        // Create CSOs for each in request, pointing to cloned parent records
-        List<TREX1__Course_Session_Option__c> lstClonedCSOs = new List<TREX1__Course_Session_Option__c>();
-        for (TREX1__Course_Session_Option__c cso : lstCSOs) {
-            lstClonedCSOs.add(
-                new TREX1__Course_Session_Option__c(
-                    TREX1__Course_Session__c   = mapOldCourseSessionIdToClone.get(cso.TREX1__Course_Session__c).Id,
-                    TREX1__Course_Option__c    = mapOldCourseOptionIdToClone.get(cso.TREX1__Course_Option__c).Id,
-                    TREX1__Option_Available__c = cso.TREX1__Option_Available__c,
-                    TREX1__Available_Online__c = cso.TREX1__Available_Online__c
-                )
-            );
-        }
-        if (!lstClonedCSOs.isEmpty()) {
-            insert lstClonedCSOs;
-        }
-
-        Result result = new Result();
-        result.lstClonedCSOs = lstClonedCSOs;
-        result.lstClonedCourseSessions = mapOldCourseSessionIdToClone.values();
-        result.lstClonedCourseOptions = mapOldCourseOptionIdToClone.values();
-        lstResults.add(result);
-        return lstResults;
 
     }
 
@@ -222,12 +266,19 @@ public with sharing class DoubleMe {
 
     private static void setSessionDetails() {
         Map<Id, TREX1__Session__c> mapSessions = getSessionMap();
-        TREX1__Session__c originalSession = mapSessions.get(originalSessionId);
-        TREX1__Session__c targetSession = mapSessions.get(targetSessionId);
-        originalSessionName = originalSession.Name;
-        originalSessionCode = originalSession.Session_Code__c != null ? originalSession.Session_Code__c : null;
-        targetSessionName = targetSession.Name;
-        targetSessionCode = targetSession.Session_Code__c != null ? targetSession.Session_Code__c : null;
+        if(mapSessions != null && !mapSessions.isEmpty()){
+            TREX1__Session__c originalSession = mapSessions.get(originalSessionId);
+            TREX1__Session__c targetSession = mapSessions.get(targetSessionId);
+            if(originalSession != null){
+            	originalSessionName = originalSession.Name;
+            	originalSessionCode = originalSession.Session_Code__c != null ? originalSession.Session_Code__c : null;    
+            }
+            if(targetSession != null){
+                targetSessionName = targetSession.Name;
+                targetSessionCode = targetSession.Session_Code__c != null ? targetSession.Session_Code__c : null;
+            }
+        }
+        
     }
 
 
