@@ -1,3 +1,12 @@
+/*
+ * DoubleMe: Handler for Cloning the details.
+ * 
+ * 
+ * 
+ * Created By: 			Revision Date	
+ * Sagarika Rout 		28th Sep		Updated: Added system.assert
+ * Sagarika Rout 		28th Sep		Updated: Added negative test method
+ */
 @isTest
 private class DoubleMe_Test {
 
@@ -112,7 +121,7 @@ private class DoubleMe_Test {
                    TREX1__Course_Session__r.TREX1__Status__c, TREX1__Course_Option__c, TREX1__Course_Session__c, 
                    TREX1__Option_Available__c, TREX1__Available_Online__c, TREX1__Course_Option__r.Name
               FROM TREX1__Course_Session_Option__c
-             WHERE TREX1__Course_Session__r.Name = 'Test Course Session'
+             WHERE TREX1__Course_Session__r.Name = 'Spring 22 Test S22'
              LIMIT 1
         ];
         
@@ -151,7 +160,7 @@ private class DoubleMe_Test {
         request.lstCSOs = lstCSOs;
         request.originalSessionId = originalSessionId;
         request.targetSessionId = targetSessionId;
-        request.fixedDateMode = fixedDateMode;
+        request.fixedDateMode = true;
         request.fixedStartDate = fixedStartDate;
         request.fixedEndDate = fixedEndDate;
         request.updateSessionNameMode = updateSessionNameMode;
@@ -180,7 +189,7 @@ private class DoubleMe_Test {
                    TREX1__Course_Session__r.TREX1__Status__c, TREX1__Course_Option__c, TREX1__Course_Session__c, 
                    TREX1__Option_Available__c, TREX1__Available_Online__c, TREX1__Course_Option__r.Name
               FROM TREX1__Course_Session_Option__c
-             WHERE TREX1__Course_Session__r.Name = 'Test Course Session'
+             WHERE TREX1__Course_Session__r.Name = 'Spring 22 Test S22'
              LIMIT 1
         ];
         
@@ -213,20 +222,59 @@ private class DoubleMe_Test {
         List<DoubleMe.Result> lstResult;
 
         Test.startTest();
-        DoubleMe.Request request;
-        request = new DoubleMe.Request();
-        request.lstCSOs = lstCSOs;
-        request.originalSessionId = originalSessionId;
-        request.targetSessionId = targetSessionId;
-        request.fixedDateMode = fixedDateMode;
-        request.daysToAdd = daysToAdd;
-        request.updateSessionNameMode = updateSessionNameMode;
-
-        lstResult = DoubleMe.doubleThisCollection(
-            new List<DoubleMe.Request>{ request }
-        );
+            DoubleMe.Request request;
+            request = new DoubleMe.Request();
+            request.lstCSOs = lstCSOs;
+            request.originalSessionId = originalSessionId;
+            request.targetSessionId = targetSessionId;
+            request.fixedDateMode = false;
+            request.daysToAdd = daysToAdd;
+            request.updateSessionNameMode = updateSessionNameMode;
+    
+            lstResult = DoubleMe.doubleThisCollection(
+                new List<DoubleMe.Request>{ request }
+            );
         Test.stopTest();
         
+
+        System.assert(lstResult.size() > 0);
+        System.assert(lstResult[0].lstClonedCSOs != null);
+        System.assert(lstResult[0].lstClonedCourseOptions != null);
+        
+		List<TREX1__Course_Session_Option__c> csList = lstResult[0].lstClonedCSOs;
+        System.assert(csList.size() > 0);
+		System.assertEquals(csList[0].TREX1__Option_Available__c, true, 'unable to fetch Option Avaiable');
+        System.assertNotEquals(csList[0].TREX1__Course_Session__c, Null, 'unable to fetch Course_Session');
+        System.assertNotEquals(csList[0].TREX1__Course_Option__c, null, 'unable to fetch Course_Option');
+        System.assertEquals(csList[0].TREX1__Available_Online__c, true, 'unable to fetch Available_Online');
+        
+        List<TREX1__Course_Option__c> coList = lstResult[0].lstClonedCourseOptions;
+        System.assert(coList.size() > 0);
+		System.assertEquals(coList[0].Name, 'Summer 22 Test U22', 'unable to fetch Name');
+        System.assertEquals(coList[0].TREX1__Age_as_of_date__c, date.today(), 'unable to fetch Age_as_of_date');
+        System.assertEquals(coList[0].TREX1__Display_Number_of_Classes__c, false, 'unable to fetch Display_Number_of_Classes');
+        System.assertEquals(coList[0].TREX1__Available__c, true, 'unable to fetch Available');
+        System.assertEquals(coList[0].TREX1__Available_Online__c, true, 'unable to fetch Available_Online');
+         
+    }
+    
+    @isTest
+    static void cloneStuffNotInFixedDateModeNullTest() {
+        Test.startTest();
+            
+        try{
+            List<DoubleMe.Result> lstResult = DoubleMe.doubleThisCollection(
+                new List<DoubleMe.Request>{ new DoubleMe.Request() }
+            );
+            System.assert(false, 'Expected an exception.');
+        }
+        catch(AuraHandledException e) {
+            System.debug('AuraHandledException: ' + e.getMessage());
+            System.assertEquals('Script-thrown exception', e.getMessage());
+        }
+        Test.stopTest();
+        
+
     }
 
 
