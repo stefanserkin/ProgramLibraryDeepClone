@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Session_Code__c</fullName>
+    <externalId>false</externalId>
+    <formula>IF( 
+  CONTAINS( Name , &quot;Fall&quot; ) ,
+  &quot;F&quot;,
+  IF(
+    CONTAINS( Name , &quot;Winter&quot; ) ,
+    &quot;W&quot;,
+    IF(
+      CONTAINS( Name , &quot;Spring&quot; ) ,
+      &quot;S&quot;,
+      IF(
+        CONTAINS( Name , &quot;Summer&quot; ) ,
+        &quot;U&quot;,
+        &quot;X&quot;
+      )
+    )
+  )
+) + RIGHT( Name , 2 )</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Session Code</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
