@@ -39,9 +39,13 @@ public with sharing class DoubleMe {
         try {
             List<Result> lstResults = new List<Result>();
             List<TREX1__Course_Session_Option__c> lstCSOs;
+            List<TREX1__Available_Discounts__c> lstAvailableDiscounts;
+            List<TREX1__Assigned_Question_Group__c> lstAQGs;
     
             if(lstRequests.size() > 0){
                 lstCSOs = lstRequests.get(0).lstCSOs;
+                lstAvailableDiscounts = lstRequests.get(0).lstAvailableDiscounts;
+                lstAQGs = lstRequests.get(0).lstAQGs;
                 originalSessionId = lstRequests.get(0).originalSessionId;
                 targetSessionId = lstRequests.get(0).targetSessionId;
                 fixedDateMode = lstRequests.get(0).fixedDateMode != null ? lstRequests.get(0).fixedDateMode : false;
@@ -56,7 +60,6 @@ public with sharing class DoubleMe {
             if (updateSessionNameMode) {
                 setSessionDetails();
             }
-            
             Set<Id> setCourseOptionIds = new Set<Id>();
             Set<Id> setCourseSessionIds = new Set<Id>();
             // Create sets of ids for queries
@@ -66,6 +69,19 @@ public with sharing class DoubleMe {
                 }
                 if(cso.TREX1__Course_Session__c != null){
                 	setCourseSessionIds.add(cso.TREX1__Course_Session__c);
+                }
+            }
+            for (TREX1__Available_Discounts__c availableDiscount : lstAvailableDiscounts) {
+                if(availableDiscount.TREX1__Course_Option__c != null){
+                    setCourseOptionIds.add(availableDiscount.TREX1__Course_Option__c);
+                }
+                if(availableDiscount.TREX1__Course_Session__c != null){
+                	setCourseSessionIds.add(availableDiscount.TREX1__Course_Session__c);
+                }
+            }
+            for (TREX1__Assigned_Question_Group__c aqg : lstAQGs) {
+                if(aqg.TREX1__Course_Session__c != null){
+                	setCourseSessionIds.add(aqg.TREX1__Course_Session__c);
                 }
             }
             
@@ -100,15 +116,39 @@ public with sharing class DoubleMe {
             if (!lstClonedCSOs.isEmpty()) {
                 insert lstClonedCSOs;
             }
+
+            // Create Available Discounts
+            List<TREX1__Available_Discounts__c> lstClonedAvailableDiscounts = new List<TREX1__Available_Discounts__c>();
+            for (TREX1__Available_Discounts__c availableDiscounts : lstAvailableDiscounts) {
+                TREX1__Available_Discounts__c clone = availableDiscounts.clone(false, false, false, false);
+                clone.TREX1__Course_Session__c   = mapOldCourseSessionIdToClone.get(availableDiscounts.TREX1__Course_Session__c).Id;
+                clone.TREX1__Course_Option__c    = mapOldCourseOptionIdToClone.get(availableDiscounts.TREX1__Course_Option__c).Id;
+                lstClonedAvailableDiscounts.add(clone);
+            }
+            if (!lstClonedAvailableDiscounts.isEmpty()) {
+                insert lstClonedAvailableDiscounts;
+            }
+
+            // Create Available Discounts
+            List<TREX1__Assigned_Question_Group__c> lstClonedAQGs = new List<TREX1__Assigned_Question_Group__c>();
+            for (TREX1__Assigned_Question_Group__c aqg : lstAQGs) {
+                TREX1__Assigned_Question_Group__c clone = aqg.clone(false, false, false, false);
+                clone.TREX1__Course_Session__c   = mapOldCourseSessionIdToClone.get(aqg.TREX1__Course_Session__c).Id;
+                lstClonedAQGs.add(clone);
+            }
+            if (!lstClonedAQGs.isEmpty()) {
+                insert lstClonedAQGs;
+            }
             
             Result result = new Result();
             result.lstClonedCSOs = lstClonedCSOs;
+            result.lstClonedAvailableDiscounts = lstClonedAvailableDiscounts;
+            result.lstClonedAQGs = lstClonedAQGs;
             result.lstClonedCourseSessions = mapOldCourseSessionIdToClone.values();
             result.lstClonedCourseOptions = mapOldCourseOptionIdToClone.values();
+            
             lstResults.add(result);
             return lstResults;
-            
-            
 
         }catch (QueryException e) {
             System.debug('Query Exception hit' + e.getStackTraceString());
@@ -117,7 +157,7 @@ public with sharing class DoubleMe {
 
         }catch(DmlException e){
                 //If a DML exception occurs it will go to this statement
-                System.debug('DmlException hit' + e.getStackTraceString());
+                System.debug('DmlException hit ' + e.getStackTraceString());
             	throw new AuraHandledException( exceptionString +  e.getStackTraceString() + contactAdminError);
 
         }catch (Exception e) {
@@ -298,6 +338,8 @@ public with sharing class DoubleMe {
                    TREX1__Rich_Description__c, TREX1__Session__c, TREX1__Status__c, TREX1__Supervisor__c, TREX1__Supervisor_Email__c,
                    TREX1__Transfer_Fee__c, TREX1__Transfer_GL_Account__c, TREX1__Transfer_in_within_Program__c, TREX1__Transfer_out_within_Program__c, 
                    TREX1__Waitlist_Message__c, TREX1__Withdrawal_Days__c, TREX1__Withdrawal_Fee__c, TREX1__Withdrawal_GL_Account__c, TREX1__Withdrawal_Policy__c
+            
+            
               FROM TREX1__Course_Session__c 
              WHERE Id IN :setCourseSessionIds
               WITH SECURITY_ENFORCED
@@ -352,6 +394,10 @@ public with sharing class DoubleMe {
         @InvocableVariable(required=true description='Original Course Session Options')
         public List<TREX1__Course_Session_Option__c> lstCSOs;
         @InvocableVariable(required=true description='Original Session')
+        public List<TREX1__Available_Discounts__c> lstAvailableDiscounts;
+        @InvocableVariable(required=true description='Original Session')
+        public List<TREX1__Assigned_Question_Group__c> lstAQGs;
+        @InvocableVariable(required=true description='Original Session')
         public Id originalSessionId;
         @InvocableVariable(required=true description='Target Session')
         public Id targetSessionId;
@@ -374,6 +420,10 @@ public with sharing class DoubleMe {
         public List<TREX1__Course_Option__c> lstClonedCourseOptions;
         @InvocableVariable(description='Cloned Course Session Options')
         public List<TREX1__Course_Session_Option__c> lstClonedCSOs;
+        @InvocableVariable(description='Cloned Available Discounts')
+        public List<TREX1__Available_Discounts__c> lstClonedAvailableDiscounts;
+        @InvocableVariable(description='Cloned Assigned Question Group')
+        public List<TREX1__Assigned_Question_Group__c> lstClonedAQGs;
     }
 
 }

@@ -102,6 +102,38 @@ private class DoubleMe_Test {
         );
         insert cso;
 
+        TREX1__Global_Billing_Group__c billingGroup = new TREX1__Global_Billing_Group__c(
+            Name = 'Test Billing Group',
+            TREX1__Community_Bill_To_Account__c = 'Enabled',
+            TREX1__Monthly_Billing_Day__c = 1,
+            TREX1__Public_Name__c = 'Test Billing Group'
+        );
+        insert billingGroup;
+        TREX1__Product__c productDiscount = new TREX1__Product__c(
+            Name = 'Test Product',
+            TREX1__Billing_Cancellation_Credit_Setting__c = 'No Credit',
+            TREX1__Global_Billing_Group__c = billingGroup.Id
+        );
+        insert productDiscount;
+        TREX1__Available_Discounts__c availableDiscounts = new TREX1__Available_Discounts__c(
+            Name = 'Discount Test',
+            TREX1__Discount__c = productDiscount.Id,
+            TREX1__Course_Session__c = cs.Id,
+            TREX1__Course_Option__c = co.Id
+        );
+        insert availableDiscounts;
+
+        TREX1__Question_Group__c questionGroup = new TREX1__Question_Group__c();
+        questionGroup.Name = 'Test QuestionGroup';
+        insert questionGroup;
+
+        TREX1__Assigned_Question_Group__c assignQuestionGroups = new TREX1__Assigned_Question_Group__c(
+            TREX1__Question_Group__c = questionGroup.Id,
+            TREX1__Course_Session__c = cs.Id,
+            TREX1__Program__c = program.Id,
+            TREX1__Sort_Priority__c = 1
+        );
+        insert assignQuestionGroups;
     }
 
     @isTest
@@ -124,7 +156,15 @@ private class DoubleMe_Test {
              WHERE TREX1__Course_Session__r.Name = 'Spring 22 Test S22'
              LIMIT 1
         ];
-        
+        List<TREX1__Assigned_Question_Group__c> lstOldAssignQuestionGroups = [
+            SELECT Id, Name, TREX1__Sort_Priority__c, TREX1__Question_Group__c, TREX1__Course_Session__c, TREX1__Program__c
+            FROM TREX1__Assigned_Question_Group__c
+        ];
+        List<TREX1__Available_Discounts__c> lstOldAvailableDiscounts = [
+            SELECT Id, Name, TREX1__Discount__c, TREX1__Course_Session__c, TREX1__Course_Option__c
+            FROM TREX1__Available_Discounts__c
+        ];
+
         TREX1__Session__c oldSession;
         TREX1__Session__c newSession;
 
@@ -158,6 +198,8 @@ private class DoubleMe_Test {
         DoubleMe.Request request;
         request = new DoubleMe.Request();
         request.lstCSOs = lstCSOs;
+        request.lstAQGs = lstOldAssignQuestionGroups;
+        request.lstAvailableDiscounts = lstOldAvailableDiscounts;
         request.originalSessionId = originalSessionId;
         request.targetSessionId = targetSessionId;
         request.fixedDateMode = true;
@@ -192,6 +234,14 @@ private class DoubleMe_Test {
              WHERE TREX1__Course_Session__r.Name = 'Spring 22 Test S22'
              LIMIT 1
         ];
+        List<TREX1__Assigned_Question_Group__c> lstOldAssignQuestionGroups = [
+            SELECT Id, Name, TREX1__Sort_Priority__c, TREX1__Question_Group__c, TREX1__Course_Session__c, TREX1__Program__c
+            FROM TREX1__Assigned_Question_Group__c
+        ];
+        List<TREX1__Available_Discounts__c> lstOldAvailableDiscounts = [
+            SELECT Id, Name, TREX1__Discount__c, TREX1__Course_Session__c, TREX1__Course_Option__c
+            FROM TREX1__Available_Discounts__c
+        ];
         
         TREX1__Session__c oldSession;
         TREX1__Session__c newSession;
@@ -225,6 +275,8 @@ private class DoubleMe_Test {
             DoubleMe.Request request;
             request = new DoubleMe.Request();
             request.lstCSOs = lstCSOs;
+            request.lstAQGs = lstOldAssignQuestionGroups;
+            request.lstAvailableDiscounts = lstOldAvailableDiscounts;
             request.originalSessionId = originalSessionId;
             request.targetSessionId = targetSessionId;
             request.fixedDateMode = false;
@@ -239,6 +291,8 @@ private class DoubleMe_Test {
 
         System.assert(lstResult.size() > 0);
         System.assert(lstResult[0].lstClonedCSOs != null);
+        System.assert(lstResult[0].lstClonedAQGs.size() == request.lstAQGs.size());
+        System.assert(lstResult[0].lstClonedAvailableDiscounts.size() == request.lstAvailableDiscounts.size());
         System.assert(lstResult[0].lstClonedCourseOptions != null);
         
 		List<TREX1__Course_Session_Option__c> csList = lstResult[0].lstClonedCSOs;
