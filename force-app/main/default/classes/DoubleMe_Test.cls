@@ -8,7 +8,7 @@
  * Sagarika Rout 		28th Sep		Updated: Added negative test method
  */
 @isTest
-private class DoubleMe_Test {
+private class DoubleMe_Test { 
 
     @TestSetup
     static void makeData(){
