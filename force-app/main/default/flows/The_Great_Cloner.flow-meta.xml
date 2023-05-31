@@ -3,8 +3,8 @@
     <actionCalls>
         <name>Clone_Em</name>
         <label>Clone &apos;Em!</label>
-        <locationX>182</locationX>
-        <locationY>974</locationY>
+        <locationX>50</locationX>
+        <locationY>1094</locationY>
         <actionName>DoubleMe</actionName>
         <actionType>apex</actionType>
         <connector>
@@ -68,32 +68,6 @@
             <name>lstClonedCourseSessions</name>
         </outputParameters>
     </actionCalls>
-    <actionCalls>
-        <name>Query_for_CSOs</name>
-        <label>Query for CSOs</label>
-        <locationX>182</locationX>
-        <locationY>734</locationY>
-        <actionName>ExecuteSOQL</actionName>
-        <actionType>apex</actionType>
-        <connector>
-            <targetReference>Review_Screen</targetReference>
-        </connector>
-        <dataTypeMappings>
-            <typeName>U__sObjects</typeName>
-            <typeValue>TREX1__Course_Session_Option__c</typeValue>
-        </dataTypeMappings>
-        <flowTransactionModel>Automatic</flowTransactionModel>
-        <inputParameters>
-            <name>soqlQuery</name>
-            <value>
-                <elementReference>queryString</elementReference>
-            </value>
-        </inputParameters>
-        <outputParameters>
-            <assignToReference>originalCourseSessionOptions</assignToReference>
-            <name>sObjects</name>
-        </outputParameters>
-    </actionCalls>
     <apiVersion>54.0</apiVersion>
     <assignments>
         <name>Set_fixedDateMode</name>
@@ -108,7 +82,7 @@
             </value>
         </assignmentItems>
         <connector>
-            <targetReference>Query_for_CSOs</targetReference>
+            <targetReference>Get_CSOs</targetReference>
         </connector>
     </assignments>
     <choices>
@@ -133,7 +107,7 @@
         <locationX>182</locationX>
         <locationY>398</locationY>
         <defaultConnector>
-            <targetReference>Query_for_CSOs</targetReference>
+            <targetReference>Get_CSOs</targetReference>
         </defaultConnector>
         <defaultConnectorLabel>Is Add Days</defaultConnectorLabel>
         <rules>
@@ -150,6 +124,31 @@
                 <targetReference>Set_fixedDateMode</targetReference>
             </connector>
             <label>Is Fixed Date</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_Get_CSOs</name>
+        <label>Check Get CSOs</label>
+        <locationX>182</locationX>
+        <locationY>854</locationY>
+        <defaultConnector>
+            <targetReference>Error_CSOs_Not_Found_Screen</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>CSOs Not Found</defaultConnectorLabel>
+        <rules>
+            <name>Got_CSOs</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Get_CSOs</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Review_Screen</targetReference>
+            </connector>
+            <label>Got CSOs</label>
         </rules>
     </decisions>
     <dynamicChoiceSets>
@@ -192,11 +191,41 @@
         </value>
     </processMetadataValues>
     <processType>Flow</processType>
+    <recordLookups>
+        <name>Get_CSOs</name>
+        <label>Get CSOs</label>
+        <locationX>182</locationX>
+        <locationY>734</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Check_Get_CSOs</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Session_ID__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>Input_Original_Session_Picklist</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Program_ID__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>Input_Program_Picklist</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>TREX1__Course_Session_Option__c</object>
+        <sortField>Id</sortField>
+        <sortOrder>Asc</sortOrder>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
     <recordUpdates>
         <name>Update_Course_Options</name>
         <label>Update Course Options</label>
-        <locationX>182</locationX>
-        <locationY>1214</locationY>
+        <locationX>50</locationX>
+        <locationY>1334</locationY>
         <connector>
             <targetReference>Update_Course_Sessions</targetReference>
         </connector>
@@ -205,8 +234,8 @@
     <recordUpdates>
         <name>Update_Course_Sessions</name>
         <label>Update Course Sessions</label>
-        <locationX>182</locationX>
-        <locationY>1334</locationY>
+        <locationX>50</locationX>
+        <locationY>1454</locationY>
         <connector>
             <targetReference>End_Screen</targetReference>
         </connector>
@@ -399,11 +428,11 @@
     <screens>
         <name>Confirmation_Screen</name>
         <label>Confirmation Screen</label>
-        <locationX>182</locationX>
-        <locationY>1094</locationY>
-        <allowBack>true</allowBack>
+        <locationX>50</locationX>
+        <locationY>1214</locationY>
+        <allowBack>false</allowBack>
         <allowFinish>true</allowFinish>
-        <allowPause>true</allowPause>
+        <allowPause>false</allowPause>
         <connector>
             <targetReference>Update_Course_Options</targetReference>
         </connector>
@@ -426,7 +455,7 @@
                 <fieldType>Region</fieldType>
                 <fields>
                     <name>Confirmation_Screen_Msg</name>
-                    <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;Success! Make any needed changes to the tables below. Changes will not be committed until you click Finish.&lt;/p&gt;</fieldText>
+                    <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;Success! Make any needed changes to the tables below. Changes will not be committed until you click Commit Changes.&lt;/p&gt;</fieldText>
                     <fieldType>DisplayText</fieldType>
                 </fields>
                 <inputParameters>
@@ -594,30 +623,48 @@
             <isRequired>true</isRequired>
             <storeOutputAutomatically>true</storeOutputAutomatically>
         </fields>
+        <nextOrFinishButtonLabel>Commit Changes</nextOrFinishButtonLabel>
         <showFooter>true</showFooter>
         <showHeader>true</showHeader>
     </screens>
     <screens>
         <name>End_Screen</name>
         <label>End Screen</label>
-        <locationX>182</locationX>
-        <locationY>1454</locationY>
+        <locationX>50</locationX>
+        <locationY>1574</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>true</allowPause>
         <fields>
             <name>End_Screen_Msg</name>
-            <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;&lt;img src=&quot;https://asphaltgreen--clone--c.documentforce.com/sfc/servlet.shepherd/version/download/068030000028yP3?asPdf=false&amp;amp;operationContext=CHATTER&quot;&gt;&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p&gt;That&apos;s all.&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
         </fields>
         <showFooter>true</showFooter>
         <showHeader>true</showHeader>
     </screens>
     <screens>
+        <name>Error_CSOs_Not_Found_Screen</name>
+        <label>Error CSOs Not Found Screen</label>
+        <locationX>314</locationX>
+        <locationY>974</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <name>Error_CSOs_Not_Found_Screen_Msg</name>
+            <fieldText>&lt;p&gt;Hmm... something went wrong.&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;We couldn&apos;t find any records matching your criteria. Please check the Program and Session and try again.&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <nextOrFinishButtonLabel>Cancel</nextOrFinishButtonLabel>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+    <screens>
         <name>Review_Screen</name>
         <label>Review Screen</label>
-        <locationX>182</locationX>
-        <locationY>854</locationY>
+        <locationX>50</locationX>
+        <locationY>974</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>true</allowPause>
@@ -636,12 +683,6 @@
                 <name>objectName</name>
                 <value>
                     <stringValue>TREX1__Course_Session_Option__c</stringValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>tableData</name>
-                <value>
-                    <elementReference>originalCourseSessionOptions</elementReference>
                 </value>
             </inputParameters>
             <inputParameters>
@@ -702,6 +743,12 @@
                 <name>tableIcon</name>
                 <value>
                     <stringValue>custom:custom51</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>tableData</name>
+                <value>
+                    <elementReference>Get_CSOs</elementReference>
                 </value>
             </inputParameters>
             <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
