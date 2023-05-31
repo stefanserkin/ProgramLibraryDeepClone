@@ -71,6 +71,8 @@ public with sharing class DoubleMe {
             Set<Id> setCourseOptionIds = new Set<Id>();
             Set<Id> setCourseSessionIds = new Set<Id>();
             Set<Id> setProductDiscountids = new Set<Id>();
+            Set<Id> setProductDiscountidsNonClone = new Set<Id>();
+
             // Create sets of ids for queries
             for (TREX1__Course_Session_Option__c cso : lstCSOs) {
                 System.debug('xxx cso ' +cso);
@@ -101,48 +103,52 @@ public with sharing class DoubleMe {
             System.debug('xxx mapCourseOptions ' +mapCourseOptions);
             //Iterate course session and option to get product and discount ids
             for(TREX1__Course_Session__c courseSession : mapCourseSessions.values()) {
-                if(courseSession.TREX1__Product__c != null)
-                    setProductDiscountids.add(courseSession.TREX1__Product__c);
+                if(courseSession.TREX1__Product__c != null){
+                    if(dontCloneProducts){
+                        setProductDiscountidsNonClone.add(courseSession.TREX1__Product__c);
+                    } else {
+                        setProductDiscountids.add(courseSession.TREX1__Product__c);
+                    }
+                }
             }
             for(TREX1__Course_Option__c couseOption : mapCourseOptions.values()) {
-                if(couseOption?.TREX1__Product__c != null)
+                if(couseOption?.TREX1__Product__c != null){
                     setProductDiscountids.add(couseOption?.TREX1__Product__c);
+                    setProductDiscountidsNonClone.add(couseOption?.TREX1__Product__c);
+                }
             }
            
             // Get map of product and discount records based on  course sessions and course option
             Map<Id, TREX1__Product__c> mapProductAndDiscount = getProductDiscountMap(setProductDiscountids);
+            Map<Id, TREX1__Product__c> mapProductAndDiscountNonClone = getProductDiscountMap(setProductDiscountidsNonClone);
 
             Map<Id, TREX1__Price_Level__c> mapPriceLevel = getPriceLevelMap(setProductDiscountids);
 
             Map<Id, TREX1__Planned_Billing_Schedule__c> mapPlannedBillingSch = getPlannedBillingSchMap(mapPriceLevel.keySet());
             Map<Id, List<PlannedBillingSchedule>> mapIdToPlannedBillingSch= new Map<Id, List<PlannedBillingSchedule>>();
-            //if(!dontCloneProducts){
-                for(Id plannedBillingSchId : mapPlannedBillingSch.keySet()) {
-                    if(!mapIdToPlannedBillingSch.containsKey(mapPlannedBillingSch.get(plannedBillingSchId).TREX1__Price_Level__c)) {
-                        mapIdToPlannedBillingSch.put(mapPlannedBillingSch.get(plannedBillingSchId).TREX1__Price_Level__c, new List<PlannedBillingSchedule>());
-                    }
-                    mapIdToPlannedBillingSch.get(mapPlannedBillingSch.get(plannedBillingSchId).TREX1__Price_Level__c).add(
-                        new PlannedBillingSchedule(
-                            mapPlannedBillingSch.get(plannedBillingSchId)
-                        )
-                    );
+            for(Id plannedBillingSchId : mapPlannedBillingSch.keySet()) {
+                if(!mapIdToPlannedBillingSch.containsKey(mapPlannedBillingSch.get(plannedBillingSchId).TREX1__Price_Level__c)) {
+                    mapIdToPlannedBillingSch.put(mapPlannedBillingSch.get(plannedBillingSchId).TREX1__Price_Level__c, new List<PlannedBillingSchedule>());
                 }
-            //}
+                mapIdToPlannedBillingSch.get(mapPlannedBillingSch.get(plannedBillingSchId).TREX1__Price_Level__c).add(
+                    new PlannedBillingSchedule(
+                        mapPlannedBillingSch.get(plannedBillingSchId)
+                    )
+                );
+            }
 
             Map<Id, List<PriceLevel>> mapIdToPriceLevel = new Map<Id, List<PriceLevel>>();
-            //if(!dontCloneProducts){
-                for(Id priceLevelId : mapPriceLevel.keySet()) {
-                    if(!mapIdToPriceLevel.containsKey(mapPriceLevel.get(priceLevelId).TREX1__Product__c)) {
-                        mapIdToPriceLevel.put(mapPriceLevel.get(priceLevelId).TREX1__Product__c, new List<PriceLevel>());
-                    }
-                    mapIdToPriceLevel.get(mapPriceLevel.get(priceLevelId).TREX1__Product__c).add(
-                        new PriceLevel(
-                            mapPriceLevel.get(priceLevelId),
-                            mapIdToPlannedBillingSch.get(priceLevelId)
-                        )
-                    );
+            for(Id priceLevelId : mapPriceLevel.keySet()) {
+                if(!mapIdToPriceLevel.containsKey(mapPriceLevel.get(priceLevelId).TREX1__Product__c)) {
+                    mapIdToPriceLevel.put(mapPriceLevel.get(priceLevelId).TREX1__Product__c, new List<PriceLevel>());
                 }
-            //}
+                mapIdToPriceLevel.get(mapPriceLevel.get(priceLevelId).TREX1__Product__c).add(
+                    new PriceLevel(
+                        mapPriceLevel.get(priceLevelId),
+                        mapIdToPlannedBillingSch.get(priceLevelId)
+                    )
+                );
+            }
 
 
             List<ProductAndDiscount> productAndDiscountWrapper = new List<ProductAndDiscount>();
@@ -156,7 +162,7 @@ public with sharing class DoubleMe {
             }
 
             List<ProductAndDiscount> nonClonedproductAndDiscountWrapper = new List<ProductAndDiscount>();
-            for(TREX1__Product__c productDiscount : mapProductAndDiscount.values()) {
+            for(TREX1__Product__c productDiscount : mapProductAndDiscountNonClone.values()) {
                 nonClonedproductAndDiscountWrapper.add(
                     new ProductAndDiscount(
                         productDiscount, new List<PriceLevel>()
@@ -459,17 +465,19 @@ public with sharing class DoubleMe {
         Date startDate,
         Date endDate
     ) {
+        System.debug('testing before ' + co);
         co.TREX1__Start_Date__c = startDate;
         co.TREX1__End_Date__c = endDate;
-        co.TREX1__Register_From_Date__c = startDate;
-        co.TREX1__Register_To_Date__c = endDate;
-        co.TREX1__Register_Online_From_Date__c = startDate;
-        co.TREX1__Register_Online_To_Date__c = endDate;
-        co.TREX1__Early_Register_From_Date__c = startDate;
-        co.TREX1__Early_Register_To_Date__c = endDate;
-        co.TREX1__Early_Register_Online_From_Date__c = startDate;
-        co.TREX1__Early_Register_Online_To_Date__c = endDate;
+        if(co.TREX1__Register_From_Date__c != null) co.TREX1__Register_From_Date__c = startDate;
+        if(co.TREX1__Register_To_Date__c != null) co.TREX1__Register_To_Date__c = endDate;
+        if(co.TREX1__Register_Online_From_Date__c !=null) co.TREX1__Register_Online_From_Date__c = startDate;
+        if(co.TREX1__Register_Online_To_Date__c != null) co.TREX1__Register_Online_To_Date__c = endDate;
+        if(co.TREX1__Early_Register_From_Date__c != null) co.TREX1__Early_Register_From_Date__c = startDate;
+        if(co.TREX1__Early_Register_To_Date__c != null) co.TREX1__Early_Register_To_Date__c = endDate;
+        if(co.TREX1__Early_Register_Online_From_Date__c != null) co.TREX1__Early_Register_Online_From_Date__c = startDate;
+        if(co.TREX1__Early_Register_Online_To_Date__c != null) co.TREX1__Early_Register_Online_To_Date__c = endDate;
         co.TREX1__Age_as_of_date__c = co.TREX1__Age_as_of_date__c != null ? startDate : null;
+        System.debug('testing after ' + co);
     }
 
     /**

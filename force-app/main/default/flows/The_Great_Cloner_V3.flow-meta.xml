@@ -3,8 +3,8 @@
     <actionCalls>
         <name>Clone_Em</name>
         <label>Clone &apos;Em!</label>
-        <locationX>50</locationX>
-        <locationY>1790</locationY>
+        <locationX>182</locationX>
+        <locationY>2366</locationY>
         <actionName>DoubleMe</actionName>
         <actionType>apex</actionType>
         <connector>
@@ -92,12 +92,31 @@
             <name>lstClonedCourseSessions</name>
         </outputParameters>
     </actionCalls>
+    <actionCalls>
+        <name>Get_Session_List</name>
+        <label>Get Session List</label>
+        <locationX>314</locationX>
+        <locationY>518</locationY>
+        <actionName>GetSessionByCourse</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Configuration_Screen</targetReference>
+        </connector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>recChoiceCourse</name>
+            <value>
+                <elementReference>recChoiceCourse</elementReference>
+            </value>
+        </inputParameters>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </actionCalls>
     <apiVersion>54.0</apiVersion>
     <assignments>
         <name>Add_to_Course_Option_Collection</name>
         <label>Add to Course Option Collection</label>
-        <locationX>138</locationX>
-        <locationY>2270</locationY>
+        <locationX>270</locationX>
+        <locationY>2846</locationY>
         <assignmentItems>
             <assignToReference>courseOptionUpdateList</assignToReference>
             <operator>Add</operator>
@@ -112,8 +131,8 @@
     <assignments>
         <name>Add_to_Course_Session_Collection</name>
         <label>Add to Course Session Collection</label>
-        <locationX>138</locationX>
-        <locationY>2726</locationY>
+        <locationX>270</locationX>
+        <locationY>3302</locationY>
         <assignmentItems>
             <assignToReference>courseSessionUpdateList</assignToReference>
             <operator>Add</operator>
@@ -128,8 +147,8 @@
     <assignments>
         <name>Assign_Course_Option_Name_to_Name</name>
         <label>Assign Course Option Name to Name</label>
-        <locationX>138</locationX>
-        <locationY>2150</locationY>
+        <locationX>270</locationX>
+        <locationY>2726</locationY>
         <assignmentItems>
             <assignToReference>Copy_Course_Option_Name.Name</assignToReference>
             <operator>Assign</operator>
@@ -144,8 +163,8 @@
     <assignments>
         <name>Assign_Course_Session_Name_to_Name</name>
         <label>Assign Course Session Name to Name</label>
-        <locationX>138</locationX>
-        <locationY>2606</locationY>
+        <locationX>270</locationX>
+        <locationY>3182</locationY>
         <assignmentItems>
             <assignToReference>Copy_Course_Session_Name.Name</assignToReference>
             <operator>Assign</operator>
@@ -160,8 +179,8 @@
     <assignments>
         <name>List_Course_Session_ids</name>
         <label>List Course Session ids</label>
-        <locationX>138</locationX>
-        <locationY>1214</locationY>
+        <locationX>270</locationX>
+        <locationY>1790</locationY>
         <assignmentItems>
             <assignToReference>Set_CourseSessionIds</assignToReference>
             <operator>Add</operator>
@@ -176,8 +195,8 @@
     <assignments>
         <name>Set_fixedDateMode</name>
         <label>Set fixedDateMode</label>
-        <locationX>50</locationX>
-        <locationY>518</locationY>
+        <locationX>182</locationX>
+        <locationY>878</locationY>
         <assignmentItems>
             <assignToReference>fixedDateMode</assignToReference>
             <operator>Assign</operator>
@@ -186,9 +205,17 @@
             </value>
         </assignmentItems>
         <connector>
-            <targetReference>Get_CSOs</targetReference>
+            <targetReference>If_Course_All</targetReference>
         </connector>
     </assignments>
+    <choices>
+        <name>All</name>
+        <choiceText>All Courses</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>All</stringValue>
+        </value>
+    </choices>
     <choices>
         <name>choiceAddDays</name>
         <choiceText>Add days to original record&apos;s dates</choiceText>
@@ -208,10 +235,10 @@
     <decisions>
         <name>Check_Date_Adjustment_Type</name>
         <label>Check Date Adjustment Type</label>
-        <locationX>182</locationX>
-        <locationY>398</locationY>
+        <locationX>314</locationX>
+        <locationY>758</locationY>
         <defaultConnector>
-            <targetReference>Get_CSOs</targetReference>
+            <targetReference>If_Course_All</targetReference>
         </defaultConnector>
         <defaultConnectorLabel>Is Add Days</defaultConnectorLabel>
         <rules>
@@ -233,17 +260,17 @@
     <decisions>
         <name>Check_Get_CSOs</name>
         <label>Check Get CSOs</label>
-        <locationX>182</locationX>
-        <locationY>854</locationY>
+        <locationX>314</locationX>
+        <locationY>1430</locationY>
         <defaultConnector>
             <targetReference>Error_CSOs_Not_Found_Screen</targetReference>
         </defaultConnector>
         <defaultConnectorLabel>CSOs Not Found</defaultConnectorLabel>
         <rules>
             <name>Got_CSOs</name>
-            <conditionLogic>and</conditionLogic>
+            <conditionLogic>or</conditionLogic>
             <conditions>
-                <leftValueReference>Get_CSOs</leftValueReference>
+                <leftValueReference>CourseSessionOptionsList</leftValueReference>
                 <operator>IsNull</operator>
                 <rightValue>
                     <booleanValue>false</booleanValue>
@@ -255,7 +282,69 @@
             <label>Got CSOs</label>
         </rules>
     </decisions>
-    <description>add Don&apos;t clone products; add Registration Values from Target Session toggle merged with additional form fields</description>
+    <decisions>
+        <name>If_Course_All</name>
+        <label>If Course All</label>
+        <locationX>314</locationX>
+        <locationY>1094</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Yes_Course_All</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Input_Course_Picklist</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <elementReference>All</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_CSOs</targetReference>
+            </connector>
+            <label>Yes Course All</label>
+        </rules>
+        <rules>
+            <name>Not_ALL</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>recChoiceCourse</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>All</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_CSOs_With_Course</targetReference>
+            </connector>
+            <label>Not ALL</label>
+        </rules>
+    </decisions>
+    <description>add Don&apos;t clone products; add Registration Values from Target Session toggle merged with additional form fields; add course filter; Add Erica changes Plus session filter</description>
+    <dynamicChoiceSets>
+        <name>getSessionListChoice</name>
+        <collectionReference>Get_Session_List.Sessions</collectionReference>
+        <dataType>String</dataType>
+        <displayField>Name</displayField>
+        <object>TREX1__Session__c</object>
+        <valueField>Id</valueField>
+    </dynamicChoiceSets>
+    <dynamicChoiceSets>
+        <name>recChoiceCourse</name>
+        <dataType>String</dataType>
+        <displayField>Name</displayField>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>TREX1__Program__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>recChoicePrograms</elementReference>
+            </value>
+        </filters>
+        <object>TREX1__Course__c</object>
+        <sortField>Name</sortField>
+        <sortOrder>Asc</sortOrder>
+        <valueField>Id</valueField>
+    </dynamicChoiceSets>
     <dynamicChoiceSets>
         <name>recChoicePrograms</name>
         <dataType>String</dataType>
@@ -293,14 +382,13 @@
         <sortOrder>Asc</sortOrder>
         <valueField>Id</valueField>
     </dynamicChoiceSets>
-    <environments>Default</environments>
     <interviewLabel>The Great Cloner V3 {!$Flow.CurrentDateTime}</interviewLabel>
     <label>The Great Cloner V3</label>
     <loops>
         <name>Copy_Course_Option_Name</name>
         <label>Copy Course Option Name</label>
-        <locationX>50</locationX>
-        <locationY>2030</locationY>
+        <locationX>182</locationX>
+        <locationY>2606</locationY>
         <collectionReference>datatableClonedCourseOptions.outputEditedRows</collectionReference>
         <iterationOrder>Asc</iterationOrder>
         <nextValueConnector>
@@ -313,8 +401,8 @@
     <loops>
         <name>Copy_Course_Session_Name</name>
         <label>Copy Course Session Name</label>
-        <locationX>50</locationX>
-        <locationY>2486</locationY>
+        <locationX>182</locationX>
+        <locationY>3062</locationY>
         <collectionReference>datatableClonedCourseSessions.outputEditedRows</collectionReference>
         <iterationOrder>Asc</iterationOrder>
         <nextValueConnector>
@@ -327,8 +415,8 @@
     <loops>
         <name>Loop_Over_CSO</name>
         <label>Loop Over CSO</label>
-        <locationX>50</locationX>
-        <locationY>1094</locationY>
+        <locationX>182</locationX>
+        <locationY>1670</locationY>
         <collectionReference>datatableOriginalCSOs.outputSelectedRows</collectionReference>
         <iterationOrder>Asc</iterationOrder>
         <nextValueConnector>
@@ -360,8 +448,8 @@
     <recordLookups>
         <name>Get_AQGs</name>
         <label>Get AQGs</label>
-        <locationX>50</locationX>
-        <locationY>1550</locationY>
+        <locationX>182</locationX>
+        <locationY>2126</locationY>
         <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
         <connector>
             <targetReference>Review_QG_Discount</targetReference>
@@ -390,8 +478,8 @@
     <recordLookups>
         <name>Get_Available_Discounts</name>
         <label>Get Available Discounts</label>
-        <locationX>50</locationX>
-        <locationY>1430</locationY>
+        <locationX>182</locationX>
+        <locationY>2006</locationY>
         <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
         <connector>
             <targetReference>Get_AQGs</targetReference>
@@ -420,8 +508,8 @@
     <recordLookups>
         <name>Get_CSOs</name>
         <label>Get CSOs</label>
-        <locationX>182</locationX>
-        <locationY>734</locationY>
+        <locationX>50</locationX>
+        <locationY>1214</locationY>
         <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
         <connector>
             <targetReference>Check_Get_CSOs</targetReference>
@@ -438,20 +526,67 @@
             <field>Program_ID__c</field>
             <operator>EqualTo</operator>
             <value>
-                <elementReference>Input_Program_Picklist</elementReference>
+                <elementReference>recChoicePrograms</elementReference>
             </value>
         </filters>
-        <getFirstRecordOnly>false</getFirstRecordOnly>
         <object>TREX1__Course_Session_Option__c</object>
+        <outputReference>CourseSessionOptionsList</outputReference>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>Name</queriedFields>
+        <queriedFields>TREX1__Course_Option__c</queriedFields>
+        <queriedFields>TREX1__Course_Session__c</queriedFields>
+        <queriedFields>TREX1__Option_Available__c</queriedFields>
+        <queriedFields>TREX1__Available_Online__c</queriedFields>
         <sortField>Id</sortField>
         <sortOrder>Asc</sortOrder>
-        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordLookups>
+        <name>Get_CSOs_With_Course</name>
+        <label>Get CSOs With Course</label>
+        <locationX>314</locationX>
+        <locationY>1214</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Check_Get_CSOs</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Session_ID__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>Input_Original_Session_Picklist</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Program_ID__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>recChoicePrograms</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Course_ID__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>recChoiceCourse</elementReference>
+            </value>
+        </filters>
+        <object>TREX1__Course_Session_Option__c</object>
+        <outputReference>CourseSessionOptionsList</outputReference>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>Name</queriedFields>
+        <queriedFields>TREX1__Course_Option__c</queriedFields>
+        <queriedFields>TREX1__Course_Session__c</queriedFields>
+        <queriedFields>TREX1__Option_Available__c</queriedFields>
+        <queriedFields>TREX1__Available_Online__c</queriedFields>
+        <sortField>Id</sortField>
+        <sortOrder>Asc</sortOrder>
     </recordLookups>
     <recordUpdates>
         <name>Update_Course_Options</name>
         <label>Update Course Options</label>
-        <locationX>50</locationX>
-        <locationY>2942</locationY>
+        <locationX>182</locationX>
+        <locationY>3518</locationY>
         <connector>
             <targetReference>Update_Course_Sessions</targetReference>
         </connector>
@@ -460,8 +595,8 @@
     <recordUpdates>
         <name>Update_Course_Sessions</name>
         <label>Update Course Sessions</label>
-        <locationX>50</locationX>
-        <locationY>3062</locationY>
+        <locationX>182</locationX>
+        <locationY>3638</locationY>
         <connector>
             <targetReference>End_Screen</targetReference>
         </connector>
@@ -470,8 +605,8 @@
     <screens>
         <name>Configuration_Screen</name>
         <label>Configuration Screen</label>
-        <locationX>182</locationX>
-        <locationY>278</locationY>
+        <locationX>314</locationX>
+        <locationY>638</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>true</allowPause>
@@ -485,37 +620,13 @@
                 <name>Configuration_Screen_Section1_Column1</name>
                 <fieldType>Region</fieldType>
                 <fields>
-                    <name>Program_Header</name>
-                    <fieldText>&lt;p&gt;&lt;b style=&quot;font-size: 16px;&quot;&gt;Program Information&lt;/b&gt;&lt;/p&gt;</fieldText>
-                    <fieldType>DisplayText</fieldType>
-                </fields>
-                <fields>
-                    <name>Input_Program_Picklist</name>
-                    <choiceReferences>recChoicePrograms</choiceReferences>
-                    <dataType>String</dataType>
-                    <fieldText>Choose Program</fieldText>
-                    <fieldType>DropdownBox</fieldType>
-                    <isRequired>true</isRequired>
-                </fields>
-                <inputParameters>
-                    <name>width</name>
-                    <value>
-                        <stringValue>4</stringValue>
-                    </value>
-                </inputParameters>
-                <isRequired>false</isRequired>
-            </fields>
-            <fields>
-                <name>Configuration_Screen_Section1_Column2</name>
-                <fieldType>Region</fieldType>
-                <fields>
                     <name>Session_Header</name>
                     <fieldText>&lt;p&gt;&lt;b style=&quot;font-size: 16px;&quot;&gt;Session Information&lt;/b&gt;&lt;/p&gt;</fieldText>
                     <fieldType>DisplayText</fieldType>
                 </fields>
                 <fields>
                     <name>Input_Original_Session_Picklist</name>
-                    <choiceReferences>recChoiceSessions</choiceReferences>
+                    <choiceReferences>getSessionListChoice</choiceReferences>
                     <dataType>String</dataType>
                     <fieldText>Original Session</fieldText>
                     <fieldType>DropdownBox</fieldType>
@@ -532,13 +643,13 @@
                 <inputParameters>
                     <name>width</name>
                     <value>
-                        <stringValue>4</stringValue>
+                        <stringValue>6</stringValue>
                     </value>
                 </inputParameters>
                 <isRequired>false</isRequired>
             </fields>
             <fields>
-                <name>Configuration_Screen_Section1_Column3</name>
+                <name>Configuration_Screen_Section1_Column2</name>
                 <fieldType>Region</fieldType>
                 <fields>
                     <name>Additional_Options_Header</name>
@@ -691,13 +802,12 @@
                 <inputParameters>
                     <name>width</name>
                     <value>
-                        <stringValue>4</stringValue>
+                        <stringValue>6</stringValue>
                     </value>
                 </inputParameters>
                 <isRequired>false</isRequired>
             </fields>
             <isRequired>false</isRequired>
-            <regionContainerType>SectionWithoutHeader</regionContainerType>
         </fields>
         <showFooter>true</showFooter>
         <showHeader>false</showHeader>
@@ -705,8 +815,8 @@
     <screens>
         <name>Confirmation_Screen</name>
         <label>Confirmation Screen</label>
-        <locationX>50</locationX>
-        <locationY>1910</locationY>
+        <locationX>182</locationX>
+        <locationY>2486</locationY>
         <allowBack>false</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
@@ -760,7 +870,6 @@
                 <isRequired>false</isRequired>
             </fields>
             <isRequired>false</isRequired>
-            <regionContainerType>SectionWithoutHeader</regionContainerType>
         </fields>
         <fields>
             <name>datatableClonedCourseSessions</name>
@@ -791,7 +900,7 @@
             <inputParameters>
                 <name>columnFields</name>
                 <value>
-                    <stringValue>Name,Course_Session_Name__c,TREX1__Code__c,TREX1__Course__c,TREX1__Product__c,TREX1__Session__c</stringValue>
+                    <stringValue>Name,Course_Session_Name__c,TREX1__Available__c,TREX1__Available_Online__c,TREX1__Available_Online_From__c,TREX1__Available_Online_To__c,TREX1__Code__c,TREX1__Course__c,TREX1__Product__c,TREX1__Session__c</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
@@ -803,7 +912,7 @@
             <inputParameters>
                 <name>columnWidths</name>
                 <value>
-                    <stringValue>Name:257, Course_Session_Name__c:109, TREX1__Code__c:96, TREX1__Course__c:204, TREX1__Product__c:213, TREX1__Session__c:191</stringValue>
+                    <stringValue>Name:229, Course_Session_Name__c:165, TREX1__Available__c:98, TREX1__Available_Online__c:137, TREX1__Available_Online_From__c:132, TREX1__Available_Online_To__c:135, TREX1__Code__c:96, TREX1__Course__c:157, TREX1__Product__c:100, TREX1__Session__c:134</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
@@ -868,7 +977,7 @@
             <inputParameters>
                 <name>columnFields</name>
                 <value>
-                    <stringValue>Name,TREX1__Code__c,TREX1__Start_Date__c,TREX1__End_Date__c,TREX1__Start_Time__c,TREX1__End_Time__c,TREX1__Age_Min__c,TREX1__Age_Max__c,TREX1__Age_as_of_date__c,TREX1__Capacity__c,TREX1__Unlimited_Capacity__c,TREX1__Waitlist_Capacity__c,TREX1__Unlimited_Waitlist_Capacity__c,TREX1__Overbooking_Capacity__c,TREX1__Unlimited_Overbooking_Capacity__c</stringValue>
+                    <stringValue>Name,Course_Option_Name__c,TREX1__Code__c,TREX1__Start_Date__c,TREX1__End_Date__c,TREX1__Start_Time__c,TREX1__End_Time__c,TREX1__Age_Min__c,TREX1__Age_Max__c,TREX1__Age_as_of_date__c,TREX1__Capacity__c,TREX1__Unlimited_Capacity__c,TREX1__Waitlist_Capacity__c,TREX1__Unlimited_Waitlist_Capacity__c,TREX1__Overbooking_Capacity__c,TREX1__Unlimited_Overbooking_Capacity__c</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
@@ -880,7 +989,7 @@
             <inputParameters>
                 <name>columnWidths</name>
                 <value>
-                    <stringValue>Name:133, TREX1__Code__c:76, TREX1__Start_Date__c:122, TREX1__End_Date__c:122, TREX1__Start_Time__c:122, TREX1__End_Time__c:122, TREX1__Age_Min__c:131, TREX1__Age_Max__c:131, TREX1__Age_as_of_date__c:124, TREX1__Capacity__c:92, TREX1__Unlimited_Capacity__c:86, TREX1__Waitlist_Capacity__c:118, TREX1__Unlimited_Waitlist_Capacity__c:85, TREX1__Overbooking_Capacity__c:101, TREX1__Unlimited_Overbooking_Capacity__c:79</stringValue>
+                    <stringValue>Name:133, Course_Option_Name__c:168, TREX1__Code__c:76, TREX1__Start_Date__c:122, TREX1__End_Date__c:122, TREX1__Start_Time__c:122, TREX1__End_Time__c:122, TREX1__Age_Min__c:131, TREX1__Age_Max__c:131, TREX1__Age_as_of_date__c:124, TREX1__Capacity__c:92, TREX1__Unlimited_Capacity__c:86, TREX1__Waitlist_Capacity__c:118, TREX1__Unlimited_Waitlist_Capacity__c:85, TREX1__Overbooking_Capacity__c:101, TREX1__Unlimited_Overbooking_Capacity__c:79</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
@@ -932,15 +1041,21 @@
                 </value>
             </inputParameters>
             <inputParameters>
-                <name>cb_suppressBottomBar</name>
+                <name>cb_isDisplayHeader</name>
                 <value>
-                    <stringValue>CB_FALSE</stringValue>
+                    <stringValue>CB_TRUE</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
-                <name>cb_navigateNextOnSave</name>
+                <name>tableLabel</name>
                 <value>
-                    <stringValue>CB_FALSE</stringValue>
+                    <stringValue>New Course Options: Internal Registration</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>columnEdits</name>
+                <value>
+                    <stringValue>All</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
@@ -958,25 +1073,13 @@
             <inputParameters>
                 <name>columnWidths</name>
                 <value>
-                    <stringValue>Name:130, TREX1__Available__c:98, TREX1__Register_From_Date__c:121, TREX1__Register_To_Date__c:130, TREX1__Register_From_Time__c:122, TREX1__Register_To_Time__c:125, TREX1__Early_Register__c:105, TREX1__Early_Register_From_Date__c:169, TREX1__Early_Register_To_Date__c:162, TREX1__Early_Register_From_Time__c:135, TREX1__Early_Register_To_Time__c:130</stringValue>
+                    <stringValue>Name:170, TREX1__Available__c:89, TREX1__Register_From_Date__c:130, TREX1__Register_To_Date__c:130, TREX1__Register_From_Time__c:130, TREX1__Register_To_Time__c:130, TREX1__Early_Register__c:130, TREX1__Early_Register_From_Date__c:130, TREX1__Early_Register_To_Date__c:130, TREX1__Early_Register_From_Time__c:130, TREX1__Early_Register_To_Time__c:130</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
                 <name>isDisplayHeader</name>
                 <value>
                     <booleanValue>true</booleanValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>cb_isDisplayHeader</name>
-                <value>
-                    <stringValue>CB_TRUE</stringValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>tableLabel</name>
-                <value>
-                    <stringValue>New Course Options: Internal Registration</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
@@ -1010,15 +1113,15 @@
                 </value>
             </inputParameters>
             <inputParameters>
-                <name>isDisplayHeader</name>
-                <value>
-                    <booleanValue>true</booleanValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
                 <name>cb_isDisplayHeader</name>
                 <value>
                     <stringValue>CB_TRUE</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>isDisplayHeader</name>
+                <value>
+                    <booleanValue>true</booleanValue>
                 </value>
             </inputParameters>
             <inputParameters>
@@ -1028,15 +1131,15 @@
                 </value>
             </inputParameters>
             <inputParameters>
-                <name>cb_suppressBottomBar</name>
+                <name>tableIcon</name>
                 <value>
-                    <stringValue>CB_FALSE</stringValue>
+                    <stringValue>custom:custom51</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
-                <name>cb_navigateNextOnSave</name>
+                <name>columnEdits</name>
                 <value>
-                    <stringValue>CB_FALSE</stringValue>
+                    <stringValue>All</stringValue>
                 </value>
             </inputParameters>
             <inputParameters>
@@ -1054,13 +1157,7 @@
             <inputParameters>
                 <name>columnWidths</name>
                 <value>
-                    <stringValue>Name:140, TREX1__Available_Online__c:135, TREX1__Register_Online_From_Date__c:125, TREX1__Register_Online_To_Date__c:125, TREX1__Register_Online_From_Time__c:125, TREX1__Register_Online_To_Time__c:115, TREX1__Early_Register_Online__c:120, TREX1__Early_Register_Online_From_Date__c:135, TREX1__Early_Register_Online_To_Date__c:135, TREX1__Early_Register_Online_From_Time__c:130, TREX1__Early_Register_Online_To_Time__c:130</stringValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>tableIcon</name>
-                <value>
-                    <stringValue>custom:custom51</stringValue>
+                    <stringValue>Name:197, TREX1__Available_Online__c:90, TREX1__Register_Online_From_Date__c:130, TREX1__Register_Online_To_Date__c:130, TREX1__Register_Online_From_Time__c:130, TREX1__Register_Online_To_Time__c:130, TREX1__Early_Register_Online__c:111, TREX1__Early_Register_Online_From_Date__c:130, TREX1__Early_Register_Online_To_Date__c:130, TREX1__Early_Register_Online_From_Time__c:130, TREX1__Early_Register_Online_To_Time__c:130</stringValue>
                 </value>
             </inputParameters>
             <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
@@ -1071,10 +1168,76 @@
         <showHeader>false</showHeader>
     </screens>
     <screens>
+        <name>Course_Configuration_Screen</name>
+        <label>Course Configuration Screen</label>
+        <locationX>314</locationX>
+        <locationY>398</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>true</allowPause>
+        <connector>
+            <targetReference>Get_Session_List</targetReference>
+        </connector>
+        <fields>
+            <name>Course_Configuration_Screen_Section1</name>
+            <fieldType>RegionContainer</fieldType>
+            <fields>
+                <name>Course_Configuration_Screen_Section1_Column1</name>
+                <fieldType>Region</fieldType>
+                <fields>
+                    <name>Copy_1_of_Course_Header</name>
+                    <fieldText>&lt;p&gt;&lt;strong style=&quot;font-size: 16px;&quot;&gt;Course Information&lt;/strong&gt;&lt;/p&gt;</fieldText>
+                    <fieldType>DisplayText</fieldType>
+                </fields>
+                <fields>
+                    <name>Input_Course_Picklist</name>
+                    <choiceReferences>recChoiceCourse</choiceReferences>
+                    <choiceReferences>All</choiceReferences>
+                    <dataType>String</dataType>
+                    <fieldText>Choose Course</fieldText>
+                    <fieldType>DropdownBox</fieldType>
+                    <isRequired>true</isRequired>
+                </fields>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>4</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <fields>
+                <name>Course_Configuration_Screen_Section1_Column2</name>
+                <fieldType>Region</fieldType>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>4</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <fields>
+                <name>Course_Configuration_Screen_Section1_Column3</name>
+                <fieldType>Region</fieldType>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>4</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <isRequired>false</isRequired>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
         <name>End_Screen</name>
         <label>End Screen</label>
-        <locationX>50</locationX>
-        <locationY>3182</locationY>
+        <locationX>182</locationX>
+        <locationY>3758</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>true</allowPause>
@@ -1089,8 +1252,8 @@
     <screens>
         <name>Error_CSOs_Not_Found_Screen</name>
         <label>Error CSOs Not Found Screen</label>
-        <locationX>314</locationX>
-        <locationY>974</locationY>
+        <locationX>446</locationX>
+        <locationY>1550</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
@@ -1103,10 +1266,75 @@
         <showHeader>false</showHeader>
     </screens>
     <screens>
+        <name>Program_Configuration_Screen</name>
+        <label>Program Configuration Screen</label>
+        <locationX>314</locationX>
+        <locationY>278</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>true</allowPause>
+        <connector>
+            <targetReference>Course_Configuration_Screen</targetReference>
+        </connector>
+        <fields>
+            <name>Program_Configuration_Screen_Section1</name>
+            <fieldType>RegionContainer</fieldType>
+            <fields>
+                <name>Program_Configuration_Screen_Section1_Column1</name>
+                <fieldType>Region</fieldType>
+                <fields>
+                    <name>Copy_1_of_Program_Header</name>
+                    <fieldText>&lt;p&gt;&lt;b style=&quot;font-size: 16px;&quot;&gt;Program Information&lt;/b&gt;&lt;/p&gt;</fieldText>
+                    <fieldType>DisplayText</fieldType>
+                </fields>
+                <fields>
+                    <name>Input_Program_Picklist</name>
+                    <choiceReferences>recChoicePrograms</choiceReferences>
+                    <dataType>String</dataType>
+                    <fieldText>Choose Program</fieldText>
+                    <fieldType>DropdownBox</fieldType>
+                    <isRequired>true</isRequired>
+                </fields>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>4</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <fields>
+                <name>Program_Configuration_Screen_Section1_Column2</name>
+                <fieldType>Region</fieldType>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>4</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <fields>
+                <name>Program_Configuration_Screen_Section1_Column3</name>
+                <fieldType>Region</fieldType>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>4</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <isRequired>false</isRequired>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
         <name>Review_QG_Discount</name>
         <label>Review AQG Discount</label>
-        <locationX>50</locationX>
-        <locationY>1670</locationY>
+        <locationX>182</locationX>
+        <locationY>2246</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
@@ -1292,8 +1520,8 @@
     <screens>
         <name>Review_Screen</name>
         <label>Review Screen</label>
-        <locationX>50</locationX>
-        <locationY>974</locationY>
+        <locationX>182</locationX>
+        <locationY>1550</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>true</allowPause>
@@ -1375,15 +1603,15 @@
                 </value>
             </inputParameters>
             <inputParameters>
-                <name>tableData</name>
-                <value>
-                    <elementReference>Get_CSOs</elementReference>
-                </value>
-            </inputParameters>
-            <inputParameters>
                 <name>cb_not_suppressNameFieldLink</name>
                 <value>
                     <stringValue>CB_FALSE</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>tableData</name>
+                <value>
+                    <elementReference>CourseSessionOptionsList</elementReference>
                 </value>
             </inputParameters>
             <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
@@ -1396,13 +1624,13 @@
     <screens>
         <name>Welcome_Screen</name>
         <label>Welcome Screen</label>
-        <locationX>182</locationX>
+        <locationX>314</locationX>
         <locationY>158</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
         <connector>
-            <targetReference>Configuration_Screen</targetReference>
+            <targetReference>Program_Configuration_Screen</targetReference>
         </connector>
         <fields>
             <name>WelcomeScreen_HeaderText</name>
@@ -1418,18 +1646,13 @@
         <showHeader>false</showHeader>
     </screens>
     <start>
-        <locationX>56</locationX>
+        <locationX>188</locationX>
         <locationY>0</locationY>
         <connector>
             <targetReference>Welcome_Screen</targetReference>
         </connector>
     </start>
     <status>Active</status>
-    <textTemplates>
-        <name>queryString</name>
-        <isViewedAsPlainText>true</isViewedAsPlainText>
-        <text>SELECT Id, TREX1__Course_Session__c, TREX1__Course_Option__c, TREX1__Option_Available__c, TREX1__Available_Online__c FROM TREX1__Course_Session_Option__c WHERE TREX1__Course_Session__r.TREX1__Session__c = &apos;{!Input_Original_Session_Picklist}&apos; AND TREX1__Course_Session__r.TREX1__Course__r.TREX1__Program__c = &apos;{!Input_Program_Picklist}&apos;</text>
-    </textTemplates>
     <variables>
         <name>courseIds</name>
         <dataType>String</dataType>
@@ -1444,6 +1667,14 @@
         <isInput>false</isInput>
         <isOutput>false</isOutput>
         <objectType>TREX1__Course_Option__c</objectType>
+    </variables>
+    <variables>
+        <name>CourseSessionOptionsList</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>TREX1__Course_Session_Option__c</objectType>
     </variables>
     <variables>
         <name>courseSessionUpdateList</name>

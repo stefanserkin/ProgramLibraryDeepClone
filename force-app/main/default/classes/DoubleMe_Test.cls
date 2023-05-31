@@ -8,7 +8,7 @@
  * Sagarika Rout 		28th Sep		Updated: Added negative test method
  */
 @isTest
-private class DoubleMe_Test { 
+private class DoubleMe_Test {
 
     @TestSetup
     static void makeData(){
@@ -330,6 +330,164 @@ private class DoubleMe_Test {
         
 
     }
+
+    @isTest
+    static void cloneStuffInDontCloneProducts() {
+
+        List<TREX1__Course_Session_Option__c> lstOldCSOs = [
+            SELECT Id, Name, TREX1__Course_Option__r.TREX1__Type__c, TREX1__Course_Option__r.TREX1__Status__c,
+                   TREX1__Course_Option__r.TREX1__Age_as_of_date__c, TREX1__Course_Option__r.TREX1__Start_Date__c,
+                   TREX1__Course_Option__r.TREX1__End_Date__c, TREX1__Course_Option__r.TREX1__Available__c,
+                   TREX1__Course_Option__r.TREX1__Register_From_Time__c, TREX1__Course_Option__r.TREX1__Register_To_Time__c,
+                   TREX1__Course_Option__r.TREX1__Register_From_Date__c, TREX1__Course_Option__r.TREX1__Register_To_Date__c,
+                   TREX1__Course_Option__r.TREX1__Available_Online__c, TREX1__Course_Option__r.TREX1__Register_Online_From_Date__c,
+                   TREX1__Course_Option__r.TREX1__Register_Online_From_Time__c, TREX1__Course_Option__r.TREX1__Register_Online_To_Time__c,
+                   TREX1__Course_Option__r.TREX1__Register_Online_To_Date__c, TREX1__Course_Option__r.TREX1__Setup_Time_Required__c,
+                   TREX1__Course_Option__r.TREX1__Tear_Down_Time_Required__c, TREX1__Course_Session__r.Name, 
+                   TREX1__Course_Session__r.TREX1__Session__c, TREX1__Course_Session__r.TREX1__Course__c, 
+                   TREX1__Course_Session__r.TREX1__Status__c, TREX1__Course_Option__c, TREX1__Course_Session__c, 
+                   TREX1__Option_Available__c, TREX1__Available_Online__c, TREX1__Course_Option__r.Name
+              FROM TREX1__Course_Session_Option__c
+             WHERE TREX1__Course_Session__r.Name = 'Spring 22 Test S22'
+             LIMIT 1
+        ];
+        List<TREX1__Assigned_Question_Group__c> lstOldAssignQuestionGroups = [
+            SELECT Id, Name, TREX1__Sort_Priority__c, TREX1__Question_Group__c, TREX1__Course_Session__c, TREX1__Program__c
+            FROM TREX1__Assigned_Question_Group__c
+        ];
+        List<TREX1__Available_Discounts__c> lstOldAvailableDiscounts = [
+            SELECT Id, Name, TREX1__Discount__c, TREX1__Course_Session__c, TREX1__Course_Option__c
+            FROM TREX1__Available_Discounts__c
+        ];
+
+        TREX1__Session__c oldSession;
+        TREX1__Session__c newSession;
+
+        List<TREX1__Session__c> lstSessions = [
+            SELECT Id, Name, TREX1__Available__c, TREX1__Available_Online__c,
+                   TREX1__Available_Online_From__c, TREX1__Available_Online_To__c,
+                   TREX1__Start_Date__c, TREX1__End_Date__c, TREX1__Status__c
+              FROM TREX1__Session__c
+             LIMIT 2
+        ];
+
+        for (TREX1__Session__c session : lstSessions) {
+            if (session.Name == 'Spring 22') {
+                oldSession = session;
+            } else if (session.Name == 'Summer 22') {
+                newSession = session;
+            }
+        }
+
+        List<TREX1__Course_Session_Option__c> lstCSOs = lstOldCSOs;
+        Id originalSessionId = oldSession.Id;
+        Id targetSessionId = newSession.Id;
+        Boolean fixedDateMode = true;
+        Date fixedStartDate = Date.today().addDays(30);
+        Date fixedEndDate = Date.today().addDays(60);
+        Boolean updateSessionNameMode = true;
+
+        List<DoubleMe.Result> lstResult;
+
+        Test.startTest();
+        DoubleMe.Request request;
+        request = new DoubleMe.Request();
+        request.lstCSOs = lstCSOs;
+        request.lstAQGs = lstOldAssignQuestionGroups;
+        request.lstAvailableDiscounts = lstOldAvailableDiscounts;
+        request.originalSessionId = originalSessionId;
+        request.targetSessionId = targetSessionId;
+        request.fixedDateMode = true;
+        request.fixedStartDate = fixedStartDate;
+        request.fixedEndDate = fixedEndDate;
+        request.updateSessionNameMode = updateSessionNameMode;
+        request.dontCloneProducts = true;
+
+        lstResult = DoubleMe.doubleThisCollection(
+            new List<DoubleMe.Request>{ request }
+        );
+        Test.stopTest();
+        
+    }
+    
+    @isTest
+    static void cloneStuffInTakeRegistrationFromSession() {
+
+        List<TREX1__Course_Session_Option__c> lstOldCSOs = [
+            SELECT Id, Name, TREX1__Course_Option__r.TREX1__Type__c, TREX1__Course_Option__r.TREX1__Status__c,
+                   TREX1__Course_Option__r.TREX1__Age_as_of_date__c, TREX1__Course_Option__r.TREX1__Start_Date__c,
+                   TREX1__Course_Option__r.TREX1__End_Date__c, TREX1__Course_Option__r.TREX1__Available__c,
+                   TREX1__Course_Option__r.TREX1__Register_From_Time__c, TREX1__Course_Option__r.TREX1__Register_To_Time__c,
+                   TREX1__Course_Option__r.TREX1__Register_From_Date__c, TREX1__Course_Option__r.TREX1__Register_To_Date__c,
+                   TREX1__Course_Option__r.TREX1__Available_Online__c, TREX1__Course_Option__r.TREX1__Register_Online_From_Date__c,
+                   TREX1__Course_Option__r.TREX1__Register_Online_From_Time__c, TREX1__Course_Option__r.TREX1__Register_Online_To_Time__c,
+                   TREX1__Course_Option__r.TREX1__Register_Online_To_Date__c, TREX1__Course_Option__r.TREX1__Setup_Time_Required__c,
+                   TREX1__Course_Option__r.TREX1__Tear_Down_Time_Required__c, TREX1__Course_Session__r.Name, 
+                   TREX1__Course_Session__r.TREX1__Session__c, TREX1__Course_Session__r.TREX1__Course__c, 
+                   TREX1__Course_Session__r.TREX1__Status__c, TREX1__Course_Option__c, TREX1__Course_Session__c, 
+                   TREX1__Option_Available__c, TREX1__Available_Online__c, TREX1__Course_Option__r.Name
+              FROM TREX1__Course_Session_Option__c
+             WHERE TREX1__Course_Session__r.Name = 'Spring 22 Test S22'
+             LIMIT 1
+        ];
+        List<TREX1__Assigned_Question_Group__c> lstOldAssignQuestionGroups = [
+            SELECT Id, Name, TREX1__Sort_Priority__c, TREX1__Question_Group__c, TREX1__Course_Session__c, TREX1__Program__c
+            FROM TREX1__Assigned_Question_Group__c
+        ];
+        List<TREX1__Available_Discounts__c> lstOldAvailableDiscounts = [
+            SELECT Id, Name, TREX1__Discount__c, TREX1__Course_Session__c, TREX1__Course_Option__c
+            FROM TREX1__Available_Discounts__c
+        ];
+
+        TREX1__Session__c oldSession;
+        TREX1__Session__c newSession;
+
+        List<TREX1__Session__c> lstSessions = [
+            SELECT Id, Name, TREX1__Available__c, TREX1__Available_Online__c,
+                   TREX1__Available_Online_From__c, TREX1__Available_Online_To__c,
+                   TREX1__Start_Date__c, TREX1__End_Date__c, TREX1__Status__c
+              FROM TREX1__Session__c
+             LIMIT 2
+        ];
+
+        for (TREX1__Session__c session : lstSessions) {
+            if (session.Name == 'Spring 22') {
+                oldSession = session;
+            } else if (session.Name == 'Summer 22') {
+                newSession = session;
+            }
+        }
+
+        List<TREX1__Course_Session_Option__c> lstCSOs = lstOldCSOs;
+        Id originalSessionId = oldSession.Id;
+        Id targetSessionId = newSession.Id;
+        Boolean fixedDateMode = true;
+        Date fixedStartDate = Date.today().addDays(30);
+        Date fixedEndDate = Date.today().addDays(60);
+        Boolean updateSessionNameMode = true;
+
+        List<DoubleMe.Result> lstResult;
+
+        Test.startTest();
+        DoubleMe.Request request;
+        request = new DoubleMe.Request();
+        request.lstCSOs = lstCSOs;
+        request.lstAQGs = lstOldAssignQuestionGroups;
+        request.lstAvailableDiscounts = lstOldAvailableDiscounts;
+        request.originalSessionId = originalSessionId;
+        request.targetSessionId = targetSessionId;
+        request.fixedDateMode = true;
+        request.fixedStartDate = fixedStartDate;
+        request.fixedEndDate = fixedEndDate;
+        request.updateSessionNameMode = updateSessionNameMode;
+        request.takeRegistrationFromSession = true;
+
+        lstResult = DoubleMe.doubleThisCollection(
+            new List<DoubleMe.Request>{ request }
+        );
+        Test.stopTest();
+        
+    }      
 
 
 }
